@@ -4,7 +4,7 @@
   <PropertyGroup>
     <Configuration Condition=" '$(Configuration)' == '' ">Debug</Configuration>
     <Platform Condition=" '$(Platform)' == '' ">AnyCPU</Platform>
-    <ProjectGuid>{2B5A7C92-CB4D-4437-BA72-E441004BE614}</ProjectGuid>
+    <ProjectGuid>{D8CFBE4C-5B16-87E1-D67E-ACB453DB7995}</ProjectGuid>
     <OutputType>WinExe</OutputType>
     <RootNamespace>IncomingOrderProcessor</RootNamespace>
     <AssemblyName>IncomingOrderProcessor</AssemblyName>
@@ -37,6 +37,7 @@
     <Reference Include="System.Configuration.Install" />
     <Reference Include="System.Core" />
     <Reference Include="System.Management" />
+    <Reference Include="System.Messaging" />
     <Reference Include="System.Xml.Linq" />
     <Reference Include="System.Data.DataSetExtensions" />
     <Reference Include="Microsoft.CSharp" />
