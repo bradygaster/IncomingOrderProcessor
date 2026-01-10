@@ -1,0 +1,207 @@
+{
+  "metadata": {
+    "repository": "bradygaster/IncomingOrderProcessor",
+    "assessmentDate": "2026-01-10T10:50:09.775Z",
+    "assessmentVersion": "1.0.0",
+    "targetPlatform": "Azure Container Apps"
+  },
+  "currentState": {
+    "framework": {
+      "name": ".NET Framework",
+      "version": "4.8.1",
+      "projectFormat": "legacy",
+      "targetFrameworkMoniker": "net481"
+    },
+    "applicationTypes": [
+      {
+        "type": "Windows Service",
+        "description": "Traditional Windows Service with ServiceBase architecture",
+        "entryPoint": "Program.cs",
+        "serviceClass": "Service1.cs"
+      }
+    ],
+    "dependencies": {
+      "runtime": [
+        "System.ServiceProcess",
+        "System.Messaging",
+        "System.Configuration.Install"
+      ],
+      "external": [],
+      "problematic": [
+        {
+          "name": "System.Messaging",
+          "reason": "MSMQ is Windows-specific and not available on Linux containers",
+          "severity": "critical"
+        },
+        {
+          "name": "System.ServiceProcess",
+          "reason": "Windows Service infrastructure not compatible with containerized environments",
+          "severity": "critical"
+        }
+      ]
+    },
+    "infrastructure": {
+      "messageQueue": {
+        "type": "MSMQ",
+        "queuePath": ".\\Private$\\productcatalogorders",
+        "platform": "Windows-only",
+        "cloudEquivalent": "Azure Service Bus"
+      },
+      "hosting": {
+        "current": "Windows Service",
+        "requiresWindows": true
+      }
+    }
+  },
+  "modernizationAssessment": {
+    "complexity": 7,
+    "complexityRationale": "Requires significant architectural changes: migration from Windows Service to Worker Service, replacement of MSMQ with Azure Service Bus, and migration from .NET Framework to .NET 8+. However, the business logic is straightforward and well-encapsulated.",
+    "blockers": [
+      {
+        "category": "Platform Dependency",
+        "issue": "Windows Service architecture incompatible with Linux containers",
+        "impact": "critical",
+        "solution": "Migrate to .NET Worker Service with BackgroundService"
+      },
+      {
+        "category": "Message Queue",
+        "issue": "MSMQ is Windows-specific and unavailable in Azure Container Apps",
+        "impact": "critical",
+        "solution": "Replace MSMQ with Azure Service Bus"
+      },
+      {
+        "category": "Runtime",
+        "issue": ".NET Framework 4.8.1 is Windows-only",
+        "impact": "critical",
+        "solution": "Migrate to .NET 8 or later for cross-platform support"
+      }
+    ],
+    "opportunities": [
+      {
+        "category": "Cloud-Native Messaging",
+        "description": "Azure Service Bus provides enterprise messaging with better scalability, reliability, and cloud-native features",
+        "benefit": "Improved reliability, automatic scaling, and cloud integration"
+      },
+      {
+        "category": "Container Orchestration",
+        "description": "Azure Container Apps provides automatic scaling, health monitoring, and simplified deployment",
+        "benefit": "Reduced operational overhead and improved resilience"
+      },
+      {
+        "category": "Modern .NET",
+        "description": "Migration to .NET 8+ enables cross-platform deployment, better performance, and modern language features",
+        "benefit": "Performance improvements, smaller container images, and access to latest framework features"
+      }
+    ],
+    "risks": [
+      {
+        "category": "Message Format",
+        "risk": "XML serialization format used by MSMQ may need adjustment for Azure Service Bus",
+        "mitigation": "Ensure message serialization compatibility during migration",
+        "severity": "medium"
+      },
+      {
+        "category": "Transactional Behavior",
+        "risk": "MSMQ transactional behavior may differ from Azure Service Bus",
+        "mitigation": "Review and test message handling patterns, implement proper retry policies",
+        "severity": "medium"
+      }
+    ]
+  },
+  "recommendedPath": {
+    "strategy": "Phased Migration",
+    "targetFramework": ".NET 8",
+    "targetRuntime": "Linux container on Azure Container Apps",
+    "estimatedEffort": "2-3 weeks",
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Framework Migration",
+        "description": "Migrate from .NET Framework 4.8.1 to .NET 8",
+        "tasks": [
+          "Convert project to SDK-style format",
+          "Update target framework to net8.0",
+          "Remove Windows-specific dependencies",
+          "Migrate to Worker Service template"
+        ],
+        "estimatedDays": 3
+      },
+      {
+        "phase": 2,
+        "name": "Message Queue Migration",
+        "description": "Replace MSMQ with Azure Service Bus",
+        "tasks": [
+          "Add Azure.Messaging.ServiceBus NuGet package",
+          "Replace MSMQ queue operations with Service Bus operations",
+          "Update message serialization to use JSON",
+          "Add configuration for Service Bus connection string",
+          "Implement retry policies and error handling"
+        ],
+        "estimatedDays": 5
+      },
+      {
+        "phase": 3,
+        "name": "Containerization",
+        "description": "Create Docker container and prepare for Azure Container Apps",
+        "tasks": [
+          "Create Dockerfile for .NET 8 application",
+          "Add container-specific configuration (environment variables, logging)",
+          "Create docker-compose for local testing",
+          "Test containerized application locally"
+        ],
+        "estimatedDays": 2
+      },
+      {
+        "phase": 4,
+        "name": "Azure Container Apps Deployment",
+        "description": "Deploy to Azure Container Apps with Infrastructure as Code",
+        "tasks": [
+          "Create Azure Container Apps infrastructure (Bicep or Terraform)",
+          "Configure Azure Service Bus connection",
+          "Set up managed identity for secure access",
+          "Configure application insights for monitoring",
+          "Set up auto-scaling rules",
+          "Create deployment pipeline"
+        ],
+        "estimatedDays": 3
+      }
+    ]
+  },
+  "deploymentReadiness": {
+    "containerAppsRequirements": [
+      {
+        "requirement": "Linux Container",
+        "status": "blocked",
+        "requiredAction": "Migrate to .NET 8+ for Linux support"
+      },
+      {
+        "requirement": "Stateless Architecture",
+        "status": "ready",
+        "notes": "Application is already stateless, processes messages asynchronously"
+      },
+      {
+        "requirement": "Cloud Message Queue",
+        "status": "blocked",
+        "requiredAction": "Replace MSMQ with Azure Service Bus"
+      },
+      {
+        "requirement": "Health Checks",
+        "status": "missing",
+        "requiredAction": "Implement health check endpoints for Container Apps"
+      },
+      {
+        "requirement": "Configuration via Environment Variables",
+        "status": "missing",
+        "requiredAction": "Add support for environment-based configuration"
+      },
+      {
+        "requirement": "Structured Logging",
+        "status": "partial",
+        "notes": "Console logging exists but should be enhanced with Application Insights integration"
+      }
+    ],
+    "readinessScore": 2,
+    "readinessScoreMax": 10,
+    "readinessNotes": "Application requires significant modernization before Azure Container Apps deployment. Core architecture must be migrated from Windows Service to Worker Service, and critical dependencies (MSMQ) must be replaced with cloud-native alternatives."
+  }
+}
