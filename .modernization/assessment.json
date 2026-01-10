@@ -1,0 +1,321 @@
+{
+  "assessmentVersion": "1.0",
+  "assessmentDate": "2026-01-10T11:16:39.949Z",
+  "repository": "bradygaster/IncomingOrderProcessor",
+  "application": {
+    "name": "IncomingOrderProcessor",
+    "type": "Windows Service",
+    "description": "Legacy Windows Service that processes incoming orders from MSMQ (Microsoft Message Queue)"
+  },
+  "currentState": {
+    "framework": {
+      "name": ".NET Framework",
+      "version": "4.8.1",
+      "projectFormat": "Legacy (non-SDK-style)",
+      "targetFramework": "v4.8.1",
+      "outputType": "WinExe"
+    },
+    "architecture": {
+      "pattern": "Message Queue Consumer",
+      "hostingModel": "Windows Service",
+      "messageQueue": "MSMQ (Microsoft Message Queuing)",
+      "queuePath": ".\\Private$\\productcatalogorders"
+    },
+    "dependencies": [
+      {
+        "name": "System.Messaging",
+        "purpose": "MSMQ message queue operations",
+        "type": "Framework Assembly"
+      },
+      {
+        "name": "System.ServiceProcess",
+        "purpose": "Windows Service infrastructure",
+        "type": "Framework Assembly"
+      },
+      {
+        "name": "System.Configuration.Install",
+        "purpose": "Service installation",
+        "type": "Framework Assembly"
+      },
+      {
+        "name": "System.Management",
+        "purpose": "System management operations",
+        "type": "Framework Assembly"
+      }
+    ],
+    "keyFiles": [
+      "Service1.cs - Main service implementation with MSMQ message processing",
+      "Order.cs - Order and OrderItem data models",
+      "Program.cs - Service entry point",
+      "ProjectInstaller.cs - Service installer configuration"
+    ]
+  },
+  "modernizationRequirements": {
+    "targetPlatform": "Azure Container Apps",
+    "requiredChanges": [
+      {
+        "category": "Framework Migration",
+        "priority": "Critical",
+        "changes": [
+          "Migrate from .NET Framework 4.8.1 to .NET 8.0 (LTS)",
+          "Convert from legacy project format to SDK-style csproj",
+          "Change OutputType from WinExe to Exe"
+        ]
+      },
+      {
+        "category": "Hosting Model",
+        "priority": "Critical",
+        "changes": [
+          "Replace Windows Service with Generic Host (Microsoft.Extensions.Hosting)",
+          "Implement BackgroundService for message processing",
+          "Remove ServiceBase and service-specific code"
+        ]
+      },
+      {
+        "category": "Message Queue",
+        "priority": "Critical",
+        "changes": [
+          "Replace MSMQ with Azure Service Bus",
+          "Implement Azure Service Bus SDK for message processing",
+          "Update queue configuration from local MSMQ to Azure Service Bus",
+          "Add connection string configuration support"
+        ]
+      },
+      {
+        "category": "Configuration",
+        "priority": "High",
+        "changes": [
+          "Replace App.config with appsettings.json",
+          "Implement configuration providers (JSON, Environment Variables, Azure Key Vault)",
+          "Add support for Azure App Configuration (optional)"
+        ]
+      },
+      {
+        "category": "Logging",
+        "priority": "High",
+        "changes": [
+          "Replace Console.WriteLine with ILogger",
+          "Add Application Insights integration",
+          "Implement structured logging"
+        ]
+      },
+      {
+        "category": "Dependency Injection",
+        "priority": "High",
+        "changes": [
+          "Implement Microsoft.Extensions.DependencyInjection",
+          "Register services in DI container",
+          "Use constructor injection"
+        ]
+      },
+      {
+        "category": "Containerization",
+        "priority": "Critical",
+        "changes": [
+          "Create Dockerfile for .NET 8.0",
+          "Add .dockerignore file",
+          "Configure container for Azure Container Apps"
+        ]
+      },
+      {
+        "category": "Health Checks",
+        "priority": "Medium",
+        "changes": [
+          "Add health check endpoint",
+          "Implement Azure Service Bus connectivity check",
+          "Configure liveness and readiness probes"
+        ]
+      },
+      {
+        "category": "Error Handling",
+        "priority": "Medium",
+        "changes": [
+          "Implement retry policies with Polly",
+          "Add dead-letter queue handling",
+          "Improve exception handling and logging"
+        ]
+      },
+      {
+        "category": "Deployment",
+        "priority": "Medium",
+        "changes": [
+          "Create Azure Container Apps deployment manifest",
+          "Add GitHub Actions workflow for CI/CD",
+          "Configure environment-specific settings"
+        ]
+      }
+    ]
+  },
+  "complexity": {
+    "score": 6,
+    "scale": "1-10 (1=Simple, 10=Complex)",
+    "reasoning": "Moderate complexity due to platform change (Windows to Container), MSMQ to Azure Service Bus migration, and framework upgrade. However, the application logic is straightforward with clear message processing patterns."
+  },
+  "estimatedEffort": {
+    "development": "3-5 days",
+    "testing": "2-3 days",
+    "total": "1-2 weeks",
+    "phases": [
+      {
+        "phase": "Framework Migration",
+        "duration": "1-2 days",
+        "tasks": [
+          "Convert to SDK-style project",
+          "Upgrade to .NET 8.0",
+          "Update dependencies"
+        ]
+      },
+      {
+        "phase": "Message Queue Migration",
+        "duration": "2-3 days",
+        "tasks": [
+          "Implement Azure Service Bus integration",
+          "Update message processing logic",
+          "Add configuration management",
+          "Implement retry policies"
+        ]
+      },
+      {
+        "phase": "Hosting Model Migration",
+        "duration": "1 day",
+        "tasks": [
+          "Replace Windows Service with Generic Host",
+          "Implement BackgroundService",
+          "Add DI and logging"
+        ]
+      },
+      {
+        "phase": "Containerization",
+        "duration": "1 day",
+        "tasks": [
+          "Create Dockerfile",
+          "Add health checks",
+          "Test container locally"
+        ]
+      },
+      {
+        "phase": "Testing & Deployment",
+        "duration": "2-3 days",
+        "tasks": [
+          "Integration testing",
+          "Create deployment manifests",
+          "Setup CI/CD pipeline",
+          "Deploy to Azure Container Apps"
+        ]
+      }
+    ]
+  },
+  "risks": [
+    {
+      "risk": "MSMQ to Azure Service Bus behavioral differences",
+      "severity": "Medium",
+      "mitigation": "Thorough testing of message ordering, delivery guarantees, and error handling"
+    },
+    {
+      "risk": "Missing MSMQ-specific features in Azure Service Bus",
+      "severity": "Low",
+      "mitigation": "Review current MSMQ usage - appears to use basic queue operations only"
+    },
+    {
+      "risk": "Configuration management in containerized environment",
+      "severity": "Low",
+      "mitigation": "Use Azure Key Vault and environment variables for secrets"
+    },
+    {
+      "risk": "Performance differences between Windows Service and Container Apps",
+      "severity": "Low",
+      "mitigation": "Load testing and monitoring after deployment"
+    }
+  ],
+  "recommendedMigrationPath": {
+    "strategy": "Modernize and Containerize",
+    "approach": "Incremental migration with testing at each phase",
+    "steps": [
+      {
+        "order": 1,
+        "step": "Framework Migration",
+        "description": "Upgrade to .NET 8.0 and SDK-style project"
+      },
+      {
+        "order": 2,
+        "step": "Hosting Model Migration",
+        "description": "Replace Windows Service with Generic Host and BackgroundService"
+      },
+      {
+        "order": 3,
+        "step": "Message Queue Migration",
+        "description": "Replace MSMQ with Azure Service Bus"
+      },
+      {
+        "order": 4,
+        "step": "Add Observability",
+        "description": "Implement logging, health checks, and Application Insights"
+      },
+      {
+        "order": 5,
+        "step": "Containerization",
+        "description": "Create Docker container and test locally"
+      },
+      {
+        "order": 6,
+        "step": "Azure Deployment",
+        "description": "Deploy to Azure Container Apps with CI/CD"
+      }
+    ]
+  },
+  "azureServices": {
+    "required": [
+      {
+        "service": "Azure Container Apps",
+        "purpose": "Host the containerized application",
+        "tier": "Consumption"
+      },
+      {
+        "service": "Azure Service Bus",
+        "purpose": "Replace MSMQ for message queuing",
+        "tier": "Standard (for topics/subscriptions) or Basic"
+      },
+      {
+        "service": "Azure Container Registry",
+        "purpose": "Store container images",
+        "tier": "Basic"
+      }
+    ],
+    "optional": [
+      {
+        "service": "Azure Application Insights",
+        "purpose": "Application monitoring and telemetry"
+      },
+      {
+        "service": "Azure Key Vault",
+        "purpose": "Secure secret management"
+      },
+      {
+        "service": "Azure Log Analytics",
+        "purpose": "Centralized logging"
+      }
+    ]
+  },
+  "benefits": {
+    "technical": [
+      "Modern .NET 8.0 with better performance and features",
+      "Cloud-native architecture with Azure Service Bus",
+      "Container-based deployment for portability",
+      "Better scaling and resilience with Azure Container Apps",
+      "Improved observability with Application Insights"
+    ],
+    "operational": [
+      "No Windows Server licensing costs",
+      "Auto-scaling based on queue depth",
+      "Easier deployment and updates",
+      "Better monitoring and diagnostics",
+      "Reduced infrastructure management"
+    ],
+    "business": [
+      "Lower operational costs",
+      "Improved reliability and uptime",
+      "Faster time to market for changes",
+      "Better disaster recovery capabilities"
+    ]
+  }
+}
