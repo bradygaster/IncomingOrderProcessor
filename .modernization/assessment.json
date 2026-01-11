@@ -1,0 +1,201 @@
+{
+  "repository": "bradygaster/IncomingOrderProcessor",
+  "assessmentDate": "2026-01-11T08:28:58.075Z",
+  "currentState": {
+    "framework": {
+      "name": ".NET Framework",
+      "version": "4.8.1",
+      "projectFormat": "Legacy (non-SDK-style)"
+    },
+    "applicationType": "Windows Service",
+    "projectStructure": {
+      "solutionFiles": 1,
+      "projectFiles": 1,
+      "totalCodeFiles": 5
+    },
+    "dependencies": {
+      "nugetPackages": [],
+      "frameworkReferences": [
+        "System",
+        "System.Configuration.Install",
+        "System.Core",
+        "System.Management",
+        "System.Messaging",
+        "System.Xml.Linq",
+        "System.Data.DataSetExtensions",
+        "Microsoft.CSharp",
+        "System.Data",
+        "System.Net.Http",
+        "System.ServiceProcess",
+        "System.Xml"
+      ]
+    },
+    "windowsSpecificFeatures": [
+      "Windows Service (ServiceBase)",
+      "MSMQ (MessageQueue)",
+      "Windows Service Installer"
+    ],
+    "containerization": {
+      "hasDockerfile": false,
+      "hasDockerCompose": false,
+      "containerReady": false
+    }
+  },
+  "targetState": {
+    "framework": ".NET 10",
+    "platform": "Azure Container Apps",
+    "applicationType": "Background Service (Worker Service)"
+  },
+  "assessment": {
+    "modernizationComplexity": 7,
+    "complexityScale": "1-10 (1=trivial, 10=extensive rewrite)",
+    "complexityJustification": "Requires significant architectural changes: Windows Service to Worker Service, MSMQ to Azure Service Bus/Queue Storage, legacy project format to SDK-style, and containerization",
+    "estimatedEffortHours": "16-24 hours",
+    "blockers": [
+      {
+        "category": "Windows-Specific Dependencies",
+        "description": "Application uses Windows Service infrastructure (ServiceBase, ServiceInstaller)",
+        "severity": "high",
+        "mitigation": "Convert to .NET Worker Service using BackgroundService"
+      },
+      {
+        "category": "Message Queue Technology",
+        "description": "Uses MSMQ (System.Messaging) which is Windows-only and not available in containers",
+        "severity": "high",
+        "mitigation": "Replace with Azure Service Bus, Azure Queue Storage, or RabbitMQ"
+      },
+      {
+        "category": "Project Format",
+        "description": "Legacy project format (not SDK-style) incompatible with modern .NET",
+        "severity": "medium",
+        "mitigation": "Convert to SDK-style project format"
+      }
+    ],
+    "opportunities": [
+      {
+        "category": "Code Quality",
+        "description": "Simple, well-structured code with clear separation of concerns",
+        "benefit": "Easy to understand and refactor"
+      },
+      {
+        "category": "No External Dependencies",
+        "description": "No NuGet packages to upgrade or replace",
+        "benefit": "Reduces dependency conflicts during migration"
+      },
+      {
+        "category": "Stateless Processing",
+        "description": "Order processing logic is stateless and event-driven",
+        "benefit": "Well-suited for containerized, scalable architecture"
+      }
+    ],
+    "risks": [
+      {
+        "category": "Architectural Change",
+        "description": "Fundamental shift from Windows Service to containerized Worker Service",
+        "severity": "medium",
+        "impact": "Requires testing of service lifecycle and deployment procedures"
+      },
+      {
+        "category": "Message Queue Migration",
+        "description": "Moving from MSMQ to cloud-based queue requires data format compatibility",
+        "severity": "medium",
+        "impact": "May need message translation or queue migration strategy"
+      },
+      {
+        "category": "Operational Changes",
+        "description": "Different monitoring, logging, and deployment patterns in Azure Container Apps",
+        "severity": "low",
+        "impact": "Team needs to learn new operational procedures"
+      }
+    ]
+  },
+  "migrationPath": {
+    "recommended": "Incremental modernization with parallel operation period",
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Project Structure Modernization",
+        "tasks": [
+          "Convert to SDK-style project format",
+          "Upgrade to .NET 10",
+          "Update namespace declarations to file-scoped",
+          "Enable nullable reference types"
+        ],
+        "estimatedHours": "2-3 hours"
+      },
+      {
+        "phase": 2,
+        "name": "Architecture Migration",
+        "tasks": [
+          "Convert Windows Service to Worker Service",
+          "Replace MSMQ with Azure Service Bus or Queue Storage",
+          "Implement health checks",
+          "Add structured logging with ILogger"
+        ],
+        "estimatedHours": "6-8 hours"
+      },
+      {
+        "phase": 3,
+        "name": "Containerization",
+        "tasks": [
+          "Create Dockerfile for .NET 10",
+          "Add container orchestration files",
+          "Configure environment-based settings",
+          "Implement graceful shutdown"
+        ],
+        "estimatedHours": "3-4 hours"
+      },
+      {
+        "phase": 4,
+        "name": "Azure Container Apps Deployment",
+        "tasks": [
+          "Create Azure Container Apps environment",
+          "Configure Azure Service Bus connection",
+          "Set up monitoring and logging",
+          "Implement CI/CD pipeline",
+          "Deploy and validate"
+        ],
+        "estimatedHours": "5-9 hours"
+      }
+    ]
+  },
+  "recommendations": {
+    "immediate": [
+      "Set up Azure Service Bus namespace and queue for testing",
+      "Create a feature branch for modernization work",
+      "Document current MSMQ message format and processing logic"
+    ],
+    "beforeMigration": [
+      "Ensure comprehensive understanding of message processing requirements",
+      "Plan message queue transition strategy (parallel run vs cutover)",
+      "Set up Azure Container Apps test environment"
+    ],
+    "duringMigration": [
+      "Maintain backward compatibility with message format where possible",
+      "Implement robust error handling and retry logic",
+      "Add comprehensive logging for debugging"
+    ],
+    "afterMigration": [
+      "Monitor performance and error rates closely",
+      "Keep old Windows Service available for rollback",
+      "Document new deployment and operational procedures"
+    ]
+  },
+  "tooling": {
+    "upgradeAssistant": {
+      "applicable": true,
+      "notes": "Can help with initial project format conversion and framework upgrade"
+    },
+    "portabilityAnalyzer": {
+      "applicable": true,
+      "notes": "Will identify Windows-specific APIs that need replacement"
+    }
+  },
+  "compatibilityAnalysis": {
+    "dotnet10Compatible": false,
+    "containerCompatible": false,
+    "azureContainerAppsReady": false,
+    "requiresCodeChanges": true,
+    "requiresArchitecturalChanges": true
+  }
+}
