@@ -1,0 +1,252 @@
+{
+  "assessment": {
+    "repository": "bradygaster/IncomingOrderProcessor",
+    "assessmentDate": "2026-01-13T01:42:39.559Z",
+    "assessor": "GitHub Copilot",
+    "targetFramework": ".NET 10",
+    "targetPlatform": "Azure Container Apps"
+  },
+  "currentState": {
+    "framework": {
+      "name": ".NET Framework",
+      "version": "4.8.1",
+      "isLegacy": true,
+      "supportStatus": "Long-term support (Windows only)"
+    },
+    "projectType": "Windows Service",
+    "projectFormat": "Legacy .csproj (ToolsVersion 15.0)",
+    "targetOS": "Windows",
+    "codeMetrics": {
+      "totalFiles": 7,
+      "totalLinesOfCode": 349,
+      "complexity": "Low"
+    }
+  },
+  "dependencies": {
+    "core": [
+      {
+        "name": "System.Messaging",
+        "type": "MSMQ",
+        "replacementNeeded": true,
+        "recommendation": "Azure Service Bus or Azure Storage Queues"
+      },
+      {
+        "name": "System.ServiceProcess",
+        "type": "Windows Service",
+        "replacementNeeded": true,
+        "recommendation": "Worker Service (BackgroundService)"
+      },
+      {
+        "name": "System.Configuration.Install",
+        "type": "Service Installer",
+        "replacementNeeded": true,
+        "recommendation": "Remove - not needed in modern .NET"
+      }
+    ],
+    "standard": [
+      "System.Core",
+      "System.Xml",
+      "System.Net.Http"
+    ]
+  },
+  "legacyPatterns": [
+    {
+      "pattern": "Windows Service",
+      "location": "Service1.cs, Program.cs",
+      "impact": "High",
+      "modernization": "Convert to .NET Worker Service with BackgroundService",
+      "effort": "Medium"
+    },
+    {
+      "pattern": "MSMQ (Message Queue)",
+      "location": "Service1.cs",
+      "impact": "High",
+      "modernization": "Replace with Azure Service Bus or Azure Storage Queues",
+      "effort": "Medium"
+    },
+    {
+      "pattern": "Old-style .csproj",
+      "location": "IncomingOrderProcessor.csproj",
+      "impact": "Medium",
+      "modernization": "Convert to SDK-style project format",
+      "effort": "Low"
+    },
+    {
+      "pattern": "Service Installer",
+      "location": "ProjectInstaller.cs",
+      "impact": "Low",
+      "modernization": "Remove - not needed in containerized applications",
+      "effort": "Low"
+    },
+    {
+      "pattern": "XmlMessageFormatter",
+      "location": "Service1.cs",
+      "impact": "Low",
+      "modernization": "Use JSON serialization with System.Text.Json",
+      "effort": "Low"
+    }
+  ],
+  "containerization": {
+    "readiness": "Medium",
+    "blockers": [
+      {
+        "issue": "Windows Service architecture",
+        "resolution": "Convert to Worker Service"
+      },
+      {
+        "issue": "MSMQ dependency (Windows-specific)",
+        "resolution": "Replace with Azure Service Bus"
+      }
+    ],
+    "recommendations": [
+      "Add Dockerfile for .NET 10",
+      "Configure health checks for container orchestration",
+      "Use environment variables for configuration",
+      "Implement graceful shutdown handling"
+    ]
+  },
+  "azureContainerApps": {
+    "readiness": "Good",
+    "requirements": [
+      "Convert to Worker Service pattern",
+      "Replace MSMQ with Azure Service Bus",
+      "Add health endpoints",
+      "Configure logging for Application Insights",
+      "Use managed identity for Azure service authentication"
+    ],
+    "scalability": {
+      "recommendation": "KEDA-based scaling on Service Bus queue length",
+      "minReplicas": 1,
+      "maxReplicas": 10
+    }
+  },
+  "complexity": {
+    "score": 5,
+    "scale": "1-10 (1=trivial, 10=very complex)",
+    "justification": "Medium complexity due to Windows Service and MSMQ dependencies requiring architectural changes, but small codebase makes migration straightforward",
+    "factors": {
+      "codeSize": 1,
+      "dependencies": 3,
+      "legacyPatterns": 2,
+      "architecturalChanges": 3,
+      "testingRequirements": 1
+    }
+  },
+  "migrationPath": {
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Project Modernization",
+        "tasks": [
+          "Convert to SDK-style .csproj",
+          "Upgrade to .NET 10",
+          "Remove Windows Service infrastructure",
+          "Convert to Worker Service with BackgroundService"
+        ],
+        "effort": "4-6 hours",
+        "risk": "Low"
+      },
+      {
+        "phase": 2,
+        "name": "Messaging Modernization",
+        "tasks": [
+          "Replace MSMQ with Azure Service Bus",
+          "Update message serialization to JSON",
+          "Implement retry policies",
+          "Add dead-letter queue handling"
+        ],
+        "effort": "6-8 hours",
+        "risk": "Medium"
+      },
+      {
+        "phase": 3,
+        "name": "Containerization",
+        "tasks": [
+          "Create Dockerfile",
+          "Configure health checks",
+          "Implement graceful shutdown",
+          "Add Application Insights telemetry"
+        ],
+        "effort": "3-4 hours",
+        "risk": "Low"
+      },
+      {
+        "phase": 4,
+        "name": "Azure Container Apps Deployment",
+        "tasks": [
+          "Create Container Apps environment",
+          "Configure managed identity",
+          "Set up KEDA scaling rules",
+          "Configure monitoring and alerts",
+          "Deploy and validate"
+        ],
+        "effort": "4-6 hours",
+        "risk": "Low"
+      }
+    ],
+    "totalEstimatedEffort": "17-24 hours",
+    "recommendedApproach": "Incremental migration with parallel operation during transition"
+  },
+  "risks": [
+    {
+      "risk": "MSMQ to Service Bus migration",
+      "level": "Medium",
+      "mitigation": "Implement adapter pattern to support both during transition"
+    },
+    {
+      "risk": "Message format compatibility",
+      "level": "Low",
+      "mitigation": "Maintain backward compatibility with XML format initially"
+    },
+    {
+      "risk": "Service disruption during migration",
+      "level": "Low",
+      "mitigation": "Deploy new service in parallel, gradual traffic shift"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "High",
+      "category": "Architecture",
+      "recommendation": "Convert to .NET Worker Service for cross-platform compatibility"
+    },
+    {
+      "priority": "High",
+      "category": "Messaging",
+      "recommendation": "Replace MSMQ with Azure Service Bus for cloud-native messaging"
+    },
+    {
+      "priority": "High",
+      "category": "Project Structure",
+      "recommendation": "Convert to SDK-style project format for modern .NET support"
+    },
+    {
+      "priority": "Medium",
+      "category": "Observability",
+      "recommendation": "Add Application Insights for comprehensive monitoring"
+    },
+    {
+      "priority": "Medium",
+      "category": "Configuration",
+      "recommendation": "Use Azure App Configuration or Key Vault for settings"
+    },
+    {
+      "priority": "Medium",
+      "category": "Security",
+      "recommendation": "Implement managed identity for Azure service authentication"
+    },
+    {
+      "priority": "Low",
+      "category": "Serialization",
+      "recommendation": "Migrate from XML to JSON serialization"
+    }
+  ],
+  "benefits": [
+    "Cross-platform deployment capability",
+    "Automatic scaling based on queue length",
+    "Improved reliability with container orchestration",
+    "Better monitoring and diagnostics",
+    "Reduced infrastructure management overhead",
+    "Cost optimization through efficient scaling"
+  ]
+}
