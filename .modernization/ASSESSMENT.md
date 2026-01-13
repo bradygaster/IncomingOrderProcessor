@@ -319,7 +319,7 @@ public class OrderProcessorService : BackgroundService
 ---
 
 ### Phase 4: Containerization
-**Duration:** 2-3 days | **Risk:** 🟡 Low-Medium
+**Duration:** 2-3 days | **Risk:** 🟡 Medium-Low
 
 **Tasks:**
 1. Create Dockerfile for .NET 10 Worker Service
