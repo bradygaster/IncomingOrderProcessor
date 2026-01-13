@@ -1,0 +1,238 @@
+{
+  "assessmentVersion": "1.0",
+  "timestamp": "2026-01-13T07:24:23.973Z",
+  "repository": {
+    "name": "IncomingOrderProcessor",
+    "owner": "bradygaster",
+    "url": "https://github.com/bradygaster/IncomingOrderProcessor"
+  },
+  "currentState": {
+    "framework": {
+      "name": ".NET Framework",
+      "version": "4.8.1",
+      "targetFrameworkMoniker": "net481",
+      "isLegacy": true
+    },
+    "projectType": "Windows Service",
+    "projectFormat": "legacy-csproj",
+    "language": "C#",
+    "sdkStyle": false,
+    "applicationArchitecture": "Windows Service using ServiceBase",
+    "hostingModel": "Windows Service Host"
+  },
+  "dependencies": {
+    "frameworks": [
+      {
+        "name": "System",
+        "type": "framework",
+        "isLegacy": false
+      },
+      {
+        "name": "System.Configuration.Install",
+        "type": "framework",
+        "isLegacy": true,
+        "notes": "Used for Windows Service installation"
+      },
+      {
+        "name": "System.Management",
+        "type": "framework",
+        "isLegacy": true,
+        "notes": "Windows-specific management APIs"
+      },
+      {
+        "name": "System.Messaging",
+        "type": "framework",
+        "isLegacy": true,
+        "notes": "MSMQ message queuing - Windows-only, deprecated technology"
+      },
+      {
+        "name": "System.ServiceProcess",
+        "type": "framework",
+        "isLegacy": true,
+        "notes": "Windows Service infrastructure"
+      }
+    ],
+    "nugetPackages": [],
+    "legacyDependencies": [
+      "System.Messaging (MSMQ)",
+      "System.ServiceProcess",
+      "System.Configuration.Install",
+      "System.Management"
+    ]
+  },
+  "legacyPatterns": [
+    {
+      "pattern": "Windows Service (ServiceBase)",
+      "severity": "high",
+      "description": "Application uses Windows-specific ServiceBase class for service hosting",
+      "modernAlternative": "Worker Service with Microsoft.Extensions.Hosting",
+      "files": ["IncomingOrderProcessor/Service1.cs", "IncomingOrderProcessor/Program.cs"]
+    },
+    {
+      "pattern": "MSMQ (System.Messaging)",
+      "severity": "high",
+      "description": "Uses Microsoft Message Queuing (MSMQ), a legacy Windows-only messaging system",
+      "modernAlternative": "Azure Service Bus, Azure Storage Queues, RabbitMQ, or other cloud-native messaging",
+      "files": ["IncomingOrderProcessor/Service1.cs"]
+    },
+    {
+      "pattern": "Old-style project format",
+      "severity": "medium",
+      "description": "Uses legacy .csproj format with ToolsVersion and verbose XML",
+      "modernAlternative": "SDK-style project format",
+      "files": ["IncomingOrderProcessor/IncomingOrderProcessor.csproj"]
+    },
+    {
+      "pattern": "App.config",
+      "severity": "low",
+      "description": "Uses App.config for configuration instead of modern configuration patterns",
+      "modernAlternative": "appsettings.json with Microsoft.Extensions.Configuration",
+      "files": ["IncomingOrderProcessor/App.config"]
+    },
+    {
+      "pattern": "AssemblyInfo.cs",
+      "severity": "low",
+      "description": "Uses separate AssemblyInfo.cs file for assembly metadata",
+      "modernAlternative": "Assembly attributes in project file",
+      "files": ["IncomingOrderProcessor/Properties/AssemblyInfo.cs"]
+    },
+    {
+      "pattern": "Windows Service Installer",
+      "severity": "medium",
+      "description": "Uses legacy Windows Service installer infrastructure",
+      "modernAlternative": "Container-based deployment or Windows Service with modern hosting",
+      "files": ["IncomingOrderProcessor/ProjectInstaller.cs"]
+    },
+    {
+      "pattern": "Console logging",
+      "severity": "low",
+      "description": "Uses Console.WriteLine for logging instead of structured logging",
+      "modernAlternative": "ILogger with Microsoft.Extensions.Logging",
+      "files": ["IncomingOrderProcessor/Service1.cs"]
+    }
+  ],
+  "cloudReadiness": {
+    "containerizable": false,
+    "requiresWindowsContainer": true,
+    "platformDependencies": [
+      "Windows OS (for MSMQ)",
+      "MSMQ feature must be enabled",
+      "Windows Service infrastructure"
+    ],
+    "azureContainerAppsCompatibility": "not-compatible",
+    "blockers": [
+      "MSMQ is Windows-only and not available in containers",
+      "ServiceBase is Windows-only",
+      "No Linux compatibility"
+    ]
+  },
+  "complexity": {
+    "score": 7,
+    "reasoning": "High complexity due to: 1) Major framework upgrade (.NET Framework 4.8.1 to .NET 10), 2) Complete architecture change (Windows Service to Worker Service/Container), 3) Replace MSMQ with modern messaging, 4) Project format modernization, 5) Platform shift (Windows-only to cross-platform/containerized). Medium-sized codebase with straightforward business logic reduces complexity slightly.",
+    "factors": {
+      "frameworkUpgrade": 3,
+      "architecturalChanges": 2,
+      "dependencyComplexity": 1,
+      "codebaseSize": 1
+    }
+  },
+  "estimatedEffort": {
+    "hours": "12-20",
+    "tasks": 8,
+    "description": "Medium-high effort requiring architectural changes and messaging system replacement"
+  },
+  "recommendedMigrationPath": {
+    "approach": "rewrite",
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Project Modernization",
+        "description": "Convert to SDK-style project and .NET 10",
+        "tasks": [
+          "Convert to SDK-style .csproj",
+          "Upgrade to .NET 10",
+          "Update project structure"
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "Architecture Modernization",
+        "description": "Replace Windows Service with Worker Service",
+        "tasks": [
+          "Implement Worker Service with Microsoft.Extensions.Hosting",
+          "Add structured logging (ILogger)",
+          "Replace App.config with appsettings.json"
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Messaging Modernization",
+        "description": "Replace MSMQ with cloud-native messaging",
+        "tasks": [
+          "Replace MSMQ with Azure Service Bus",
+          "Update message handling logic",
+          "Add connection string configuration"
+        ]
+      },
+      {
+        "phase": 4,
+        "name": "Containerization",
+        "description": "Add Docker support and Azure Container Apps deployment",
+        "tasks": [
+          "Create Dockerfile",
+          "Add container configuration",
+          "Create Azure Container Apps deployment configuration"
+        ]
+      }
+    ],
+    "targetArchitecture": {
+      "framework": ".NET 10",
+      "projectStyle": "SDK-style",
+      "hostingModel": "Worker Service (Microsoft.Extensions.Hosting)",
+      "messaging": "Azure Service Bus",
+      "deployment": "Azure Container Apps",
+      "logging": "Microsoft.Extensions.Logging with Application Insights",
+      "configuration": "appsettings.json with Azure App Configuration"
+    }
+  },
+  "risks": [
+    {
+      "risk": "MSMQ message compatibility",
+      "severity": "medium",
+      "mitigation": "May need message format conversion or migration tooling to move messages from MSMQ to Azure Service Bus"
+    },
+    {
+      "risk": "Breaking changes in .NET 10",
+      "severity": "low",
+      "mitigation": "Review breaking changes documentation and test thoroughly"
+    },
+    {
+      "risk": "Queue name and configuration changes",
+      "severity": "low",
+      "mitigation": "Document queue naming conventions and update all dependent systems"
+    },
+    {
+      "risk": "Operational changes",
+      "severity": "medium",
+      "mitigation": "Team needs training on container deployment and Azure Service Bus management"
+    }
+  ],
+  "benefits": [
+    "Cross-platform compatibility (Linux containers)",
+    "Cloud-native architecture suitable for Azure Container Apps",
+    "Modern hosting patterns with better lifecycle management",
+    "Improved logging and observability",
+    "Easier scaling and deployment",
+    "Active framework support and security updates",
+    "Reduced infrastructure costs (no Windows licensing for containers)",
+    "Better development experience with modern tooling"
+  ],
+  "nextSteps": [
+    "Review and approve migration approach",
+    "Set up development environment with .NET 10 SDK",
+    "Create Azure Service Bus namespace for development",
+    "Begin Phase 1: Project Modernization",
+    "Set up CI/CD pipeline for containerized deployment",
+    "Plan message migration strategy from MSMQ to Service Bus"
+  ]
+}
