@@ -275,7 +275,7 @@ The application follows a classic Windows Service pattern:
 - ✅ **DevOps Integration:** CI/CD friendly deployment model
 
 ### Business Benefits
-- ✅ **Extended Support:** .NET 10 supported until 2027+
+- ✅ **Extended Support:** .NET 10 (non-LTS) supported for 18 months; consider .NET 11 (LTS, Nov 2026) for 3-year support
 - ✅ **Reduced Risk:** Move away from legacy Windows dependencies
 - ✅ **Future Ready:** Cloud-native architecture enables future enhancements
 - ✅ **Operational Efficiency:** Less infrastructure management overhead
