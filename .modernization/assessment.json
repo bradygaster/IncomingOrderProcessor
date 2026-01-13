@@ -11,8 +11,8 @@
       "version": "4.8.1",
       "targetFrameworkMoniker": "net481",
       "isLegacy": true,
-      "isSupported": false,
-      "endOfLifeDate": "2028-01-11"
+      "isSupported": true,
+      "supportNote": "Supported as part of Windows lifecycle, but not recommended for new development. Not cross-platform."
     },
     "projectType": "Windows Service",
     "projectFormat": "Legacy .csproj (XML, non-SDK style)",
