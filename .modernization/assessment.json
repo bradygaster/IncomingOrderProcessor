@@ -137,8 +137,8 @@
     }
   },
   "estimatedEffort": {
-    "hours": "12-20",
-    "tasks": 8,
+    "hours": "15-24",
+    "tasks": 16,
     "description": "Medium-high effort requiring architectural changes and messaging system replacement"
   },
   "recommendedMigrationPath": {

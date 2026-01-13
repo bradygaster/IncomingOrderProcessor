@@ -15,7 +15,7 @@ The IncomingOrderProcessor is a Windows Service application built on **.NET Fram
 - **Messaging Platform:** MSMQ → Azure Service Bus (cloud-native messaging)
 - **Deployment Target:** Windows Service → Azure Container Apps (Linux containers)
 
-**Estimated Effort:** 12-20 hours across 8 tasks
+**Estimated Effort:** 15-24 hours across 16 tasks
 
 ---
 
@@ -407,7 +407,7 @@ Azure Container Apps
 | Phase 2: Architecture Modernization | 5 | 4-6 hours |
 | Phase 3: Messaging Modernization | 4 | 4-6 hours |
 | Phase 4: Containerization | 4 | 2-4 hours |
-| **Total** | **16 tasks** | **13-20 hours** |
+| **Total** | **16 tasks** | **15-24 hours** |
 
 *Additional time for testing, documentation, and deployment: 2-4 hours*
 
