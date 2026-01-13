@@ -1,0 +1,199 @@
+{
+  "repository": "bradygaster/IncomingOrderProcessor",
+  "assessmentDate": "2026-01-13T09:02:32.983Z",
+  "currentState": {
+    "framework": {
+      "name": ".NET Framework",
+      "version": "4.8.1",
+      "targetFrameworkMoniker": "net481",
+      "projectFormat": "legacy-msbuild"
+    },
+    "applicationType": "windows-service",
+    "outputType": "WinExe",
+    "dependencies": {
+      "nugetPackages": [],
+      "frameworkReferences": [
+        "System",
+        "System.Configuration.Install",
+        "System.Core",
+        "System.Management",
+        "System.Messaging",
+        "System.ServiceProcess",
+        "System.Data",
+        "System.Net.Http",
+        "System.Xml"
+      ]
+    },
+    "codeMetrics": {
+      "totalFiles": 7,
+      "totalLinesOfCode": 316,
+      "namespaces": 1,
+      "classes": 5
+    }
+  },
+  "legacyPatterns": [
+    {
+      "category": "windows-service",
+      "description": "Application is a Windows Service using System.ServiceProcess",
+      "impact": "high",
+      "affectedFiles": [
+        "IncomingOrderProcessor/Program.cs",
+        "IncomingOrderProcessor/Service1.cs",
+        "IncomingOrderProcessor/ProjectInstaller.cs"
+      ],
+      "migrationPath": "Convert to Worker Service using Microsoft.Extensions.Hosting"
+    },
+    {
+      "category": "msmq",
+      "description": "Uses MSMQ (System.Messaging) for message queue processing",
+      "impact": "high",
+      "affectedFiles": [
+        "IncomingOrderProcessor/Service1.cs"
+      ],
+      "migrationPath": "Replace with Azure Service Bus, Azure Storage Queues, or RabbitMQ"
+    },
+    {
+      "category": "legacy-project-format",
+      "description": "Uses legacy .csproj format with explicit file references",
+      "impact": "medium",
+      "affectedFiles": [
+        "IncomingOrderProcessor/IncomingOrderProcessor.csproj"
+      ],
+      "migrationPath": "Convert to SDK-style project format"
+    },
+    {
+      "category": "app-config",
+      "description": "Uses App.config instead of modern configuration",
+      "impact": "low",
+      "affectedFiles": [
+        "IncomingOrderProcessor/App.config"
+      ],
+      "migrationPath": "Migrate to appsettings.json with Microsoft.Extensions.Configuration"
+    },
+    {
+      "category": "console-logging",
+      "description": "Uses Console.WriteLine for logging instead of structured logging",
+      "impact": "low",
+      "affectedFiles": [
+        "IncomingOrderProcessor/Service1.cs"
+      ],
+      "migrationPath": "Implement ILogger with Microsoft.Extensions.Logging"
+    }
+  ],
+  "modernizationRequirements": {
+    "targetFramework": ".NET 10",
+    "targetPlatform": "cross-platform",
+    "deploymentTarget": "Azure Container Apps",
+    "requiredChanges": [
+      "Migrate from .NET Framework 4.8.1 to .NET 10",
+      "Convert Windows Service to Worker Service",
+      "Replace MSMQ with cloud-native messaging (Azure Service Bus recommended)",
+      "Migrate to SDK-style project format",
+      "Implement modern configuration patterns",
+      "Add structured logging with ILogger",
+      "Add Dockerfile for containerization",
+      "Add health checks for container orchestration"
+    ]
+  },
+  "complexityAssessment": {
+    "overallScore": 7,
+    "factors": {
+      "frameworkMigration": {
+        "score": 7,
+        "notes": ".NET Framework to .NET 10 is significant, but code is simple"
+      },
+      "architectureChanges": {
+        "score": 8,
+        "notes": "Windows Service to Worker Service requires restructuring"
+      },
+      "dependencyComplexity": {
+        "score": 8,
+        "notes": "MSMQ has no direct .NET 10 equivalent, requires queue replacement"
+      },
+      "codebaseSize": {
+        "score": 2,
+        "notes": "Small codebase (~316 LOC) is easy to refactor"
+      },
+      "testCoverage": {
+        "score": 5,
+        "notes": "No existing tests, will need to add basic tests"
+      },
+      "deploymentChanges": {
+        "score": 7,
+        "notes": "Moving from Windows to containers requires containerization work"
+      }
+    },
+    "estimatedEffort": {
+      "hours": "8-16",
+      "tasks": 8,
+      "risk": "medium"
+    }
+  },
+  "recommendedApproach": {
+    "strategy": "incremental-migration",
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Project Structure Modernization",
+        "tasks": [
+          "Convert to SDK-style project",
+          "Upgrade to .NET 10",
+          "Update to modern configuration system"
+        ]
+      },
+      {
+        "phase": 2,
+        "name": "Service Architecture Migration",
+        "tasks": [
+          "Convert Windows Service to Worker Service",
+          "Implement IHostedService pattern",
+          "Add structured logging"
+        ]
+      },
+      {
+        "phase": 3,
+        "name": "Messaging Infrastructure",
+        "tasks": [
+          "Replace MSMQ with Azure Service Bus",
+          "Update message handling logic",
+          "Add retry and error handling policies"
+        ]
+      },
+      {
+        "phase": 4,
+        "name": "Containerization",
+        "tasks": [
+          "Create Dockerfile",
+          "Add health checks",
+          "Configure for Azure Container Apps"
+        ]
+      }
+    ]
+  },
+  "risks": [
+    {
+      "risk": "MSMQ Compatibility",
+      "severity": "high",
+      "mitigation": "Azure Service Bus provides similar functionality with richer features"
+    },
+    {
+      "risk": "Windows-specific APIs",
+      "severity": "medium",
+      "mitigation": "Worker Service pattern is cross-platform by design"
+    },
+    {
+      "risk": "Configuration Changes",
+      "severity": "low",
+      "mitigation": "Modern configuration is more flexible and environment-aware"
+    }
+  ],
+  "benefits": [
+    "Cross-platform compatibility",
+    "Modern development experience",
+    "Cloud-native deployment options",
+    "Improved observability and logging",
+    "Container orchestration support",
+    "Better scalability with Azure Container Apps",
+    "Access to latest .NET features and performance improvements"
+  ]
+}
