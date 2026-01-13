@@ -175,7 +175,8 @@
         "description": "Replace MSMQ with Azure Service Bus",
         "tasks": [
           "Remove System.Messaging dependency",
-          "Add Azure.Messaging.ServiceBus NuGet package",
+          "Add Azure.Messaging.ServiceBus NuGet package (version 7.18.* or later)",
+          "Add Azure.Identity NuGet package (version 1.12.* or later)",
           "Implement ServiceBusProcessor for message receiving",
           "Update Order serialization (MSMQ XML to JSON)",
           "Add connection string configuration",

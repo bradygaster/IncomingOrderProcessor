@@ -30,7 +30,7 @@ The **IncomingOrderProcessor** is a .NET Framework 4.8.1 Windows Service that pr
 - **Target Framework Moniker:** net481
 - **Project Format:** Legacy XML-based .csproj (ToolsVersion 15.0)
 - **Output Type:** WinExe (Windows Service)
-- **Support Status:** Legacy, not cross-platform, end of life 2028-01-11
+- **Support Status:** Supported as part of Windows lifecycle, but legacy and not cross-platform
 
 ### Application Architecture
 The application is a **Windows Service** that:
