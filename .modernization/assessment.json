@@ -1,0 +1,222 @@
+{
+  "repository": {
+    "name": "IncomingOrderProcessor",
+    "owner": "bradygaster"
+  },
+  "assessment": {
+    "timestamp": "2026-01-13T08:22:36.176Z",
+    "version": "1.0",
+    "complexity_score": 7,
+    "estimated_effort_hours": 16
+  },
+  "current_state": {
+    "framework": {
+      "type": ".NET Framework",
+      "version": "4.8.1",
+      "project_format": "legacy_xml"
+    },
+    "application_type": "windows_service",
+    "dependencies": [
+      {
+        "name": "System.Messaging",
+        "type": "framework",
+        "purpose": "MSMQ message queue processing",
+        "modernization_required": true
+      },
+      {
+        "name": "System.ServiceProcess",
+        "type": "framework",
+        "purpose": "Windows Service infrastructure",
+        "modernization_required": true
+      },
+      {
+        "name": "System.Configuration.Install",
+        "type": "framework",
+        "purpose": "Service installation",
+        "modernization_required": true
+      }
+    ],
+    "legacy_patterns": [
+      {
+        "pattern": "Windows Service",
+        "description": "Application runs as a Windows Service",
+        "impact": "high",
+        "files": [
+          "Program.cs",
+          "Service1.cs",
+          "ProjectInstaller.cs"
+        ]
+      },
+      {
+        "pattern": "MSMQ Message Queue",
+        "description": "Uses System.Messaging for MSMQ queues",
+        "impact": "high",
+        "files": [
+          "Service1.cs"
+        ]
+      },
+      {
+        "pattern": "Old-style Project Format",
+        "description": "Uses legacy XML project format with explicit file listings",
+        "impact": "medium",
+        "files": [
+          "IncomingOrderProcessor.csproj"
+        ]
+      },
+      {
+        "pattern": "AssemblyInfo.cs",
+        "description": "Uses separate AssemblyInfo.cs file instead of project properties",
+        "impact": "low",
+        "files": [
+          "Properties/AssemblyInfo.cs"
+        ]
+      },
+      {
+        "pattern": "App.config",
+        "description": "Uses App.config instead of appsettings.json",
+        "impact": "low",
+        "files": [
+          "App.config"
+        ]
+      }
+    ]
+  },
+  "target_state": {
+    "framework": {
+      "type": ".NET",
+      "version": "10.0",
+      "project_format": "sdk_style"
+    },
+    "application_type": "worker_service",
+    "deployment_target": "azure_container_apps",
+    "recommended_services": [
+      {
+        "service": "Azure Service Bus",
+        "purpose": "Replace MSMQ with cloud-native messaging",
+        "priority": "high"
+      },
+      {
+        "service": "Azure Container Apps",
+        "purpose": "Host containerized worker service",
+        "priority": "high"
+      },
+      {
+        "service": "Azure Container Registry",
+        "purpose": "Store container images",
+        "priority": "high"
+      }
+    ]
+  },
+  "migration_requirements": [
+    {
+      "id": "MR-001",
+      "category": "framework",
+      "title": "Upgrade to .NET 10",
+      "description": "Migrate from .NET Framework 4.8.1 to .NET 10",
+      "priority": "critical",
+      "effort": "high",
+      "tasks": [
+        "Convert to SDK-style project format",
+        "Update target framework to net10.0",
+        "Remove AssemblyInfo.cs and move to project properties",
+        "Replace App.config with appsettings.json"
+      ]
+    },
+    {
+      "id": "MR-002",
+      "category": "architecture",
+      "title": "Convert Windows Service to Worker Service",
+      "description": "Replace Windows Service architecture with .NET Worker Service",
+      "priority": "critical",
+      "effort": "medium",
+      "tasks": [
+        "Remove ServiceBase and Windows Service infrastructure",
+        "Implement BackgroundService or IHostedService",
+        "Update Program.cs to use Host.CreateDefaultBuilder",
+        "Remove ProjectInstaller and related service installation code"
+      ]
+    },
+    {
+      "id": "MR-003",
+      "category": "messaging",
+      "title": "Replace MSMQ with Azure Service Bus",
+      "description": "Migrate from System.Messaging/MSMQ to Azure Service Bus",
+      "priority": "critical",
+      "effort": "high",
+      "tasks": [
+        "Add Azure.Messaging.ServiceBus NuGet package",
+        "Replace MessageQueue with ServiceBusClient",
+        "Update message receiving logic for Azure Service Bus",
+        "Configure connection strings in appsettings.json"
+      ]
+    },
+    {
+      "id": "MR-004",
+      "category": "containerization",
+      "title": "Add Docker Support",
+      "description": "Create Dockerfile for containerization",
+      "priority": "high",
+      "effort": "low",
+      "tasks": [
+        "Create Dockerfile using .NET 10 runtime",
+        "Add .dockerignore file",
+        "Configure container entry point"
+      ]
+    },
+    {
+      "id": "MR-005",
+      "category": "deployment",
+      "title": "Azure Container Apps Deployment",
+      "description": "Setup deployment to Azure Container Apps",
+      "priority": "high",
+      "effort": "medium",
+      "tasks": [
+        "Create Azure Container Apps bicep/ARM templates",
+        "Configure environment variables and secrets",
+        "Setup CI/CD pipeline for container deployment",
+        "Configure Azure Service Bus connection"
+      ]
+    },
+    {
+      "id": "MR-006",
+      "category": "modernization",
+      "title": "Implement Modern .NET Patterns",
+      "description": "Adopt modern .NET practices and patterns",
+      "priority": "medium",
+      "effort": "medium",
+      "tasks": [
+        "Add dependency injection",
+        "Implement ILogger for structured logging",
+        "Add health checks",
+        "Use nullable reference types",
+        "Add async/await throughout"
+      ]
+    }
+  ],
+  "risks": [
+    {
+      "risk": "MSMQ to Azure Service Bus migration",
+      "description": "Message format and behavior differences between MSMQ and Azure Service Bus",
+      "severity": "medium",
+      "mitigation": "Thorough testing of message serialization and processing logic"
+    },
+    {
+      "risk": "Windows-specific dependencies",
+      "description": "Application currently depends on Windows-specific services",
+      "severity": "medium",
+      "mitigation": "Ensure all Windows dependencies are replaced with cross-platform alternatives"
+    },
+    {
+      "risk": "Local queue to cloud transition",
+      "description": "Moving from local MSMQ to cloud-based messaging",
+      "severity": "low",
+      "mitigation": "Consider network latency and implement retry policies"
+    }
+  ],
+  "recommendations": {
+    "migration_path": "incremental",
+    "approach": "Create new .NET 10 project alongside existing code, migrate components incrementally",
+    "testing_strategy": "Unit tests for business logic, integration tests with Azure Service Bus",
+    "timeline": "2-3 weeks for complete migration and testing"
+  }
+}
