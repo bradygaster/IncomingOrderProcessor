@@ -142,7 +142,20 @@
   "modernizationComplexity": {
     "score": 7,
     "scale": "1-10 (1=trivial, 10=extremely complex)",
-    "justification": "Moderate-high complexity due to: (1) Complete messaging infrastructure replacement required (MSMQ to Azure Service Bus/RabbitMQ), (2) Windows Service to Worker Service conversion, (3) Framework to .NET 10 migration with breaking changes, (4) Need to create Dockerfile and containerization setup. However, the codebase is small (~350 LOC) with simple business logic, making the actual code changes manageable."
+    "justification": {
+      "summary": "Moderate-high complexity due to platform dependencies and architectural changes",
+      "complexityFactors": [
+        "Complete messaging infrastructure replacement required (MSMQ to Azure Service Bus/RabbitMQ)",
+        "Windows Service to Worker Service conversion needed",
+        "Framework migration from .NET Framework 4.8.1 to .NET 10 with breaking changes",
+        "Containerization setup required (Dockerfile and Azure Container Apps configuration)"
+      ],
+      "mitigatingFactors": [
+        "Small codebase (~350 LOC) makes changes manageable",
+        "Simple business logic with low cyclomatic complexity",
+        "Clear separation of concerns in existing architecture"
+      ]
+    }
   },
   "migrationPath": {
     "recommended": "Incremental modernization with platform replacement",
