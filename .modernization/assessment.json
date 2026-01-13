@@ -74,7 +74,7 @@
       "pattern": "MSMQ Message Queue",
       "location": "Service1.cs",
       "severity": "high",
-      "description": "Uses System.Messaging and MSMQ (.\Private$\productcatalogorders)",
+      "description": "Uses System.Messaging and MSMQ (.\\Private$\\productcatalogorders)",
       "modernization": "Replace with Azure Service Bus or Azure Storage Queues for cloud compatibility"
     },
     {
