@@ -1,0 +1,276 @@
+{
+  "assessmentVersion": "1.0",
+  "assessmentDate": "2026-01-13T00:16:59.443Z",
+  "repository": {
+    "name": "IncomingOrderProcessor",
+    "owner": "bradygaster",
+    "url": "https://github.com/bradygaster/IncomingOrderProcessor"
+  },
+  "currentState": {
+    "framework": {
+      "name": ".NET Framework",
+      "version": "4.8.1",
+      "targetFrameworkMoniker": "net481",
+      "projectFormat": "legacy"
+    },
+    "projectType": "Windows Service",
+    "applicationType": "WinExe",
+    "languageVersion": "C# (implied from .NET Framework 4.8.1)",
+    "dependencies": [
+      {
+        "name": "System.Messaging",
+        "type": "framework",
+        "purpose": "MSMQ message queue processing"
+      },
+      {
+        "name": "System.ServiceProcess",
+        "type": "framework",
+        "purpose": "Windows Service infrastructure"
+      },
+      {
+        "name": "System.Configuration.Install",
+        "type": "framework",
+        "purpose": "Service installation"
+      },
+      {
+        "name": "System.Management",
+        "type": "framework",
+        "purpose": "System management"
+      }
+    ],
+    "buildSystem": "MSBuild (legacy csproj format)",
+    "projectStructure": {
+      "solutionFormat": "slnx",
+      "projectCount": 1,
+      "hasTests": false
+    }
+  },
+  "legacyPatterns": [
+    {
+      "pattern": "Windows Service",
+      "severity": "high",
+      "description": "Application is implemented as a Windows Service, which is not compatible with containerization",
+      "impact": "Requires complete architectural change to run in containers",
+      "modernization": "Convert to Worker Service or Web API with background processing"
+    },
+    {
+      "pattern": "MSMQ (Microsoft Message Queuing)",
+      "severity": "high",
+      "description": "Uses System.Messaging for MSMQ queue processing",
+      "impact": "MSMQ is Windows-specific and not available in Linux containers",
+      "modernization": "Replace with Azure Service Bus, Azure Storage Queues, or RabbitMQ"
+    },
+    {
+      "pattern": "Legacy Project Format",
+      "severity": "medium",
+      "description": "Uses old-style csproj format with ToolsVersion attribute",
+      "impact": "Not compatible with modern .NET SDK tooling",
+      "modernization": "Migrate to SDK-style project format"
+    },
+    {
+      "pattern": ".NET Framework 4.8.1",
+      "severity": "high",
+      "description": "Targets .NET Framework which is Windows-only",
+      "impact": "Cannot run on Linux containers required for Azure Container Apps",
+      "modernization": "Migrate to .NET 10 (cross-platform)"
+    },
+    {
+      "pattern": "Windows-specific APIs",
+      "severity": "high",
+      "description": "Uses Windows-specific APIs (ServiceBase, MessageQueue)",
+      "impact": "Code will not compile or run on Linux",
+      "modernization": "Replace with cross-platform alternatives"
+    },
+    {
+      "pattern": "App.config",
+      "severity": "low",
+      "description": "Uses App.config for configuration",
+      "impact": "Modern .NET uses appsettings.json and environment variables",
+      "modernization": "Migrate to appsettings.json and IConfiguration"
+    },
+    {
+      "pattern": "Console output in service",
+      "severity": "low",
+      "description": "Uses Console.WriteLine for logging in a Windows Service",
+      "impact": "Not following modern logging patterns",
+      "modernization": "Use ILogger and structured logging"
+    }
+  ],
+  "modernizationAssessment": {
+    "targetFramework": ".NET 10",
+    "targetPlatform": "Azure Container Apps",
+    "complexityScore": 8,
+    "complexityFactors": {
+      "architecturalChanges": {
+        "score": 10,
+        "description": "Complete architectural redesign required from Windows Service to containerized application"
+      },
+      "messagingRefactoring": {
+        "score": 9,
+        "description": "MSMQ must be replaced with cloud-native messaging (Azure Service Bus recommended)"
+      },
+      "platformMigration": {
+        "score": 8,
+        "description": ".NET Framework to .NET 10 migration with removal of Windows-specific dependencies"
+      },
+      "codeComplexity": {
+        "score": 3,
+        "description": "Business logic is straightforward - simple order processing"
+      },
+      "testCoverage": {
+        "score": 7,
+        "description": "No existing tests, will need to add test coverage during migration"
+      }
+    },
+    "estimatedEffort": {
+      "hours": 16,
+      "confidence": "medium",
+      "breakdown": {
+        "projectMigration": 2,
+        "architectureRedesign": 6,
+        "messagingReplacement": 4,
+        "containerization": 2,
+        "testing": 2
+      }
+    },
+    "risks": [
+      {
+        "risk": "MSMQ functionality differences",
+        "severity": "high",
+        "mitigation": "Thoroughly test message processing with Azure Service Bus to ensure feature parity"
+      },
+      {
+        "risk": "Local queue path semantics",
+        "severity": "medium",
+        "mitigation": "Document queue naming conventions and ensure proper Azure Service Bus queue/topic configuration"
+      },
+      {
+        "risk": "Service lifecycle differences",
+        "severity": "medium",
+        "mitigation": "Implement proper graceful shutdown and health checks for container environment"
+      },
+      {
+        "risk": "No existing tests",
+        "severity": "medium",
+        "mitigation": "Create comprehensive test suite before and after migration"
+      }
+    ],
+    "blockers": [],
+    "prerequisites": [
+      "Azure subscription with permissions to create Service Bus namespace",
+      "Azure Container Apps environment",
+      "Access to migrate or recreate MSMQ queues in Azure Service Bus"
+    ]
+  },
+  "recommendedPath": {
+    "approach": "Incremental migration with parallel systems",
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Project Modernization",
+        "tasks": [
+          "Convert to SDK-style project format",
+          "Migrate to .NET 10",
+          "Remove Windows-specific dependencies",
+          "Add test project infrastructure"
+        ],
+        "estimatedHours": 3
+      },
+      {
+        "phase": 2,
+        "name": "Architecture Transformation",
+        "tasks": [
+          "Convert Windows Service to Worker Service",
+          "Implement IHostedService for background processing",
+          "Add structured logging with ILogger",
+          "Migrate configuration to appsettings.json"
+        ],
+        "estimatedHours": 4
+      },
+      {
+        "phase": 3,
+        "name": "Messaging Migration",
+        "tasks": [
+          "Replace System.Messaging with Azure.Messaging.ServiceBus",
+          "Implement Azure Service Bus message receiver",
+          "Update Order serialization (JSON instead of XML)",
+          "Add retry policies and error handling"
+        ],
+        "estimatedHours": 5
+      },
+      {
+        "phase": 4,
+        "name": "Containerization",
+        "tasks": [
+          "Create Dockerfile for the application",
+          "Add health check endpoint",
+          "Configure graceful shutdown",
+          "Add container-specific logging"
+        ],
+        "estimatedHours": 2
+      },
+      {
+        "phase": 5,
+        "name": "Azure Container Apps Deployment",
+        "tasks": [
+          "Create Azure Container Apps infrastructure",
+          "Configure environment variables and secrets",
+          "Set up Azure Service Bus connection",
+          "Deploy and validate"
+        ],
+        "estimatedHours": 2
+      }
+    ],
+    "totalEstimatedHours": 16
+  },
+  "azureContainerAppsReadiness": {
+    "compatible": false,
+    "currentBlockers": [
+      "Windows Service architecture not containerizable",
+      "MSMQ dependency is Windows-specific",
+      ".NET Framework is Windows-only",
+      "Uses Windows-specific APIs"
+    ],
+    "requiredChanges": [
+      "Migrate to .NET 10",
+      "Convert to Worker Service or Web API",
+      "Replace MSMQ with Azure Service Bus",
+      "Remove all Windows-specific dependencies",
+      "Add Dockerfile and container configuration"
+    ],
+    "postMigrationBenefits": [
+      "Cross-platform execution (Linux containers)",
+      "Cloud-native messaging with Azure Service Bus",
+      "Automatic scaling based on message queue depth",
+      "Better observability and monitoring",
+      "Easier deployment and updates",
+      "Cost optimization through serverless scaling"
+    ]
+  },
+  "recommendations": {
+    "immediate": [
+      "Create backup/documentation of current MSMQ configuration and message schemas",
+      "Set up Azure Service Bus namespace for development/testing",
+      "Add comprehensive test coverage before migration"
+    ],
+    "architecture": [
+      "Use Worker Service pattern with IHostedService",
+      "Implement Azure Service Bus for message processing",
+      "Add structured logging with Application Insights",
+      "Implement health checks for container orchestration"
+    ],
+    "deployment": [
+      "Use GitHub Actions for CI/CD",
+      "Deploy to Azure Container Apps with managed identity",
+      "Configure auto-scaling based on Service Bus queue metrics",
+      "Implement blue-green deployment strategy"
+    ],
+    "bestPractices": [
+      "Use dependency injection throughout",
+      "Implement comprehensive error handling and retry logic",
+      "Add distributed tracing",
+      "Use Azure Key Vault for secrets management",
+      "Implement proper shutdown behavior for graceful container termination"
+    ]
+  }
+}
