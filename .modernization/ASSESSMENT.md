@@ -88,7 +88,7 @@ While the codebase is small (~300 lines), the migration requires a **complete ar
 
 | Dependency | Reason | Recommended Replacement |
 |------------|--------|------------------------|
-| **System.Messaging** | MSMQ not available in .NET (Core) or Azure | Azure Service Bus, Azure Storage Queues |
+| **System.Messaging** | MSMQ service not available in Linux/Azure; Windows-only | Azure Service Bus, Azure Storage Queues |
 | **System.ServiceProcess** | Windows Service model incompatible with containers | Worker Service with BackgroundService |
 | **System.Configuration.Install** | Legacy installer model | Not needed with modern hosting |
 
