@@ -1,0 +1,326 @@
+{
+  "assessmentVersion": "1.0",
+  "assessmentDate": "2026-01-14T07:07:31.081Z",
+  "repository": {
+    "name": "IncomingOrderProcessor",
+    "owner": "bradygaster"
+  },
+  "currentState": {
+    "framework": {
+      "name": ".NET Framework",
+      "version": "4.8.1",
+      "targetFrameworkMoniker": "net481"
+    },
+    "projectType": "Windows Service",
+    "projectFormat": "legacy-csproj",
+    "architecture": "monolithic",
+    "hostingModel": "Windows Service (on-premises)"
+  },
+  "targetState": {
+    "framework": {
+      "name": ".NET",
+      "version": "10.0",
+      "targetFrameworkMoniker": "net10.0"
+    },
+    "projectType": "Worker Service",
+    "projectFormat": "SDK-style",
+    "architecture": "containerized-microservice",
+    "hostingModel": "Azure Container Apps"
+  },
+  "dependencies": {
+    "frameworkReferences": [
+      "System",
+      "System.Configuration.Install",
+      "System.Core",
+      "System.Management",
+      "System.Messaging",
+      "System.ServiceProcess",
+      "System.Net.Http",
+      "System.Data",
+      "System.Xml"
+    ],
+    "legacyDependencies": [
+      {
+        "name": "System.Messaging",
+        "reason": "MSMQ - Windows-only technology",
+        "replacement": "Azure Service Bus or Azure Storage Queues",
+        "severity": "critical"
+      },
+      {
+        "name": "System.ServiceProcess",
+        "reason": "Windows Service infrastructure",
+        "replacement": "Microsoft.Extensions.Hosting (Worker Service)",
+        "severity": "critical"
+      },
+      {
+        "name": "System.Configuration.Install",
+        "reason": "Windows Service installer",
+        "replacement": "Container deployment",
+        "severity": "high"
+      }
+    ],
+    "nugetPackages": []
+  },
+  "legacyPatterns": [
+    {
+      "pattern": "Windows Service",
+      "location": "Program.cs, Service1.cs",
+      "description": "Application runs as a Windows Service using ServiceBase",
+      "modernization": "Convert to Worker Service using IHostedService",
+      "complexity": 7
+    },
+    {
+      "pattern": "MSMQ Message Queue",
+      "location": "Service1.cs",
+      "description": "Uses System.Messaging for local MSMQ queue (Private$\\productcatalogorders)",
+      "modernization": "Replace with Azure Service Bus or Azure Storage Queues",
+      "complexity": 8
+    },
+    {
+      "pattern": "Legacy Project Format",
+      "location": "IncomingOrderProcessor.csproj",
+      "description": "Uses old-style .csproj with explicit file listings",
+      "modernization": "Convert to SDK-style project format",
+      "complexity": 3
+    },
+    {
+      "pattern": "Synchronous Event Handlers",
+      "location": "Service1.cs (OnOrderReceived)",
+      "description": "Uses BeginReceive/EndReceive async pattern instead of async/await",
+      "modernization": "Convert to modern async/await pattern",
+      "complexity": 4
+    },
+    {
+      "pattern": "XML Serialization",
+      "location": "Service1.cs (XmlMessageFormatter)",
+      "description": "Uses XML serialization for message formatting",
+      "modernization": "Consider JSON serialization for cloud messaging",
+      "complexity": 2
+    },
+    {
+      "pattern": "Console Logging",
+      "location": "Service1.cs (LogMessage, WriteOrderToConsole)",
+      "description": "Direct console output instead of structured logging",
+      "modernization": "Implement ILogger with structured logging",
+      "complexity": 3
+    }
+  ],
+  "codeMetrics": {
+    "totalProjects": 1,
+    "totalSourceFiles": 6,
+    "linesOfCode": 350,
+    "complexityScore": 7.5,
+    "maintainabilityIndex": 75
+  },
+  "complexityAnalysis": {
+    "overallComplexity": 8,
+    "reasoning": "Significant modernization required",
+    "factors": [
+      {
+        "factor": "Framework Migration",
+        "score": 8,
+        "description": ".NET Framework 4.8.1 to .NET 10 requires significant changes"
+      },
+      {
+        "factor": "Hosting Model Change",
+        "score": 8,
+        "description": "Windows Service to containerized application is a major architectural shift"
+      },
+      {
+        "factor": "Messaging Infrastructure",
+        "score": 9,
+        "description": "MSMQ to Azure messaging requires complete rewrite of queue handling"
+      },
+      {
+        "factor": "Project Structure",
+        "score": 4,
+        "description": "Converting to SDK-style project is straightforward"
+      },
+      {
+        "factor": "Code Size",
+        "score": 2,
+        "description": "Small codebase (350 LOC) is easier to modernize"
+      },
+      {
+        "factor": "External Dependencies",
+        "score": 3,
+        "description": "Minimal external dependencies, mostly framework references"
+      },
+      {
+        "factor": "Testing",
+        "score": 8,
+        "description": "No existing tests, will need to validate behavior manually"
+      }
+    ]
+  },
+  "migrationPath": {
+    "strategy": "rewrite-with-pattern-preservation",
+    "estimatedEffort": "2-3 weeks",
+    "phases": [
+      {
+        "phase": 1,
+        "name": "Project Structure Modernization",
+        "tasks": [
+          "Convert to SDK-style project format",
+          "Upgrade to .NET 10 target framework",
+          "Update namespace declarations to file-scoped",
+          "Remove legacy project infrastructure (App.config, AssemblyInfo.cs)"
+        ],
+        "estimatedTime": "2-4 hours",
+        "risk": "low"
+      },
+      {
+        "phase": 2,
+        "name": "Hosting Model Conversion",
+        "tasks": [
+          "Convert Windows Service to Worker Service",
+          "Implement IHostedService pattern",
+          "Add Microsoft.Extensions.Hosting package",
+          "Configure dependency injection",
+          "Implement structured logging with ILogger"
+        ],
+        "estimatedTime": "4-8 hours",
+        "risk": "medium"
+      },
+      {
+        "phase": 3,
+        "name": "Messaging Infrastructure Migration",
+        "tasks": [
+          "Replace MSMQ with Azure Service Bus or Storage Queues",
+          "Implement Azure SDK clients",
+          "Convert message handling to async/await pattern",
+          "Update message serialization (XML to JSON)",
+          "Implement retry and error handling policies"
+        ],
+        "estimatedTime": "1-2 days",
+        "risk": "high"
+      },
+      {
+        "phase": 4,
+        "name": "Containerization",
+        "tasks": [
+          "Create Dockerfile for .NET 10 application",
+          "Configure application for container environment",
+          "Add health check endpoints",
+          "Configure environment-based settings"
+        ],
+        "estimatedTime": "4-6 hours",
+        "risk": "medium"
+      },
+      {
+        "phase": 5,
+        "name": "Azure Container Apps Deployment",
+        "tasks": [
+          "Create Azure Container Apps environment",
+          "Configure Azure Service Bus connection",
+          "Set up container registry",
+          "Deploy and configure scaling rules",
+          "Implement monitoring and diagnostics"
+        ],
+        "estimatedTime": "1-2 days",
+        "risk": "medium"
+      },
+      {
+        "phase": 6,
+        "name": "Testing and Validation",
+        "tasks": [
+          "Create unit tests for order processing logic",
+          "Perform integration testing with Azure Service Bus",
+          "Load testing and performance validation",
+          "Documentation updates"
+        ],
+        "estimatedTime": "2-3 days",
+        "risk": "medium"
+      }
+    ],
+    "risks": [
+      {
+        "risk": "MSMQ to Azure messaging behavior differences",
+        "mitigation": "Thorough testing with production-like data, implement proper error handling",
+        "severity": "high"
+      },
+      {
+        "risk": "Message format compatibility",
+        "mitigation": "Maintain backward compatibility or coordinate with message producers",
+        "severity": "high"
+      },
+      {
+        "risk": "Container startup and shutdown handling",
+        "mitigation": "Implement proper graceful shutdown and health checks",
+        "severity": "medium"
+      },
+      {
+        "risk": "Cost implications of Azure services",
+        "mitigation": "Proper sizing and scaling configuration",
+        "severity": "low"
+      }
+    ]
+  },
+  "recommendations": [
+    {
+      "priority": "critical",
+      "category": "messaging",
+      "recommendation": "Replace MSMQ with Azure Service Bus",
+      "rationale": "Azure Service Bus provides enterprise messaging with better reliability, scalability, and cloud-native integration. Storage Queues are simpler but less feature-rich.",
+      "effort": "high"
+    },
+    {
+      "priority": "critical",
+      "category": "hosting",
+      "recommendation": "Convert to Worker Service with IHostedService",
+      "rationale": "Modern .NET hosting model with dependency injection, configuration, and logging built-in",
+      "effort": "medium"
+    },
+    {
+      "priority": "high",
+      "category": "logging",
+      "recommendation": "Implement structured logging with ILogger and Application Insights",
+      "rationale": "Better observability and diagnostics in cloud environment",
+      "effort": "low"
+    },
+    {
+      "priority": "high",
+      "category": "configuration",
+      "recommendation": "Use IConfiguration with environment variables and Azure App Configuration",
+      "rationale": "Cloud-native configuration management without rebuilding containers",
+      "effort": "low"
+    },
+    {
+      "priority": "medium",
+      "category": "serialization",
+      "recommendation": "Migrate from XML to JSON serialization",
+      "rationale": "JSON is more widely supported and efficient for cloud messaging",
+      "effort": "low"
+    },
+    {
+      "priority": "medium",
+      "category": "resilience",
+      "recommendation": "Implement Polly for retry policies and circuit breakers",
+      "rationale": "Improve resilience when communicating with Azure services",
+      "effort": "medium"
+    },
+    {
+      "priority": "medium",
+      "category": "monitoring",
+      "recommendation": "Add health check endpoints and metrics",
+      "rationale": "Enable Azure Container Apps health probes and monitoring",
+      "effort": "low"
+    },
+    {
+      "priority": "low",
+      "category": "testing",
+      "recommendation": "Add unit and integration tests",
+      "rationale": "Validate behavior during and after migration",
+      "effort": "medium"
+    }
+  ],
+  "blockers": [],
+  "notes": [
+    "Application is a simple order processor with minimal business logic, making it a good candidate for modernization",
+    "No external dependencies beyond framework libraries reduces migration complexity",
+    "MSMQ replacement is the most significant change required",
+    "Consider coordinating with message producers to ensure compatibility",
+    "Container Apps is appropriate for this workload type (event-driven processing)",
+    "Consider Azure Functions as an alternative if processing is lightweight and intermittent"
+  ]
+}
