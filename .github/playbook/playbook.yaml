@@ -1,0 +1,107 @@
+---
+# Modernization Playbook for IncomingOrderProcessor
+# Created based on user preferences for .NET 10 and Azure Container Apps
+
+metadata:
+  repository: IncomingOrderProcessor
+  created: 2026-01-14
+  user_request: "Update these apps to .NET 10 and deploy them to Azure Container Apps"
+  assessment_version: "1.0"
+
+migration_preferences:
+  target_framework:
+    from: ".NET Framework 4.8.1"
+    to: ".NET 10"
+    rationale: "Latest LTS version with modern features and performance improvements"
+  
+  windows_service:
+    from: "Windows Service (ServiceBase)"
+    to: "Worker Service"
+    rationale: "Modern .NET background service pattern, cross-platform, container-ready"
+    pattern: "Microsoft.Extensions.Hosting.BackgroundService"
+  
+  messaging:
+    from: "MSMQ (System.Messaging)"
+    to: "Azure Service Bus"
+    rationale: "Cloud-native, fully managed messaging service with enterprise features"
+    sdk: "Azure.Messaging.ServiceBus"
+    features:
+      - "At-least-once delivery"
+      - "Dead letter queues"
+      - "Session support"
+      - "Scheduled messages"
+  
+  azure_compute:
+    target: "Azure Container Apps"
+    rationale: "Serverless containers with automatic scaling, built-in KEDA support"
+    features:
+      - "Automatic scaling based on queue depth"
+      - "Built-in service bus integration"
+      - "Managed identity support"
+      - "Cost-effective for event-driven workloads"
+
+migration_strategy:
+  approach: "Modernize and Containerize"
+  steps:
+    - "Convert Windows Service to Worker Service with .NET 10"
+    - "Replace MSMQ with Azure Service Bus SDK"
+    - "Modernize project structure (SDK-style csproj)"
+    - "Add containerization support (Dockerfile)"
+    - "Configure for Azure Container Apps deployment"
+  
+  dependencies:
+    add:
+      - "Microsoft.Extensions.Hosting"
+      - "Azure.Messaging.ServiceBus"
+      - "Microsoft.Extensions.Azure"
+      - "Azure.Identity"
+    remove:
+      - "System.Messaging"
+      - "System.ServiceProcess"
+      - "System.Configuration.Install"
+
+  configuration:
+    settings_file: "appsettings.json"
+    secrets_management: "Azure Key Vault / Managed Identity"
+    environment_variables:
+      - "AZURE_SERVICE_BUS_CONNECTION_STRING"
+      - "AZURE_SERVICE_BUS_QUEUE_NAME"
+
+recommendations:
+  deployment:
+    - "Use Azure Container Registry for container images"
+    - "Configure KEDA scaling rules based on Service Bus queue length"
+    - "Enable managed identity for Service Bus authentication"
+    - "Use Azure Monitor for logging and diagnostics"
+  
+  best_practices:
+    - "Implement graceful shutdown handling"
+    - "Add health checks for container orchestration"
+    - "Use structured logging with ILogger"
+    - "Implement retry policies for transient failures"
+    - "Add telemetry with Application Insights"
+
+validation:
+  local_testing:
+    - "Test with Azure Service Bus emulator or dev queue"
+    - "Verify message processing logic"
+    - "Test graceful shutdown behavior"
+  
+  container_testing:
+    - "Build and test Docker image locally"
+    - "Verify environment variable configuration"
+    - "Test container startup and shutdown"
+
+azure_resources_needed:
+  - name: "Azure Service Bus Namespace"
+    sku: "Standard or Premium"
+    purpose: "Message queue replacement for MSMQ"
+  
+  - name: "Azure Container Apps Environment"
+    purpose: "Host the containerized worker service"
+  
+  - name: "Azure Container Registry"
+    purpose: "Store container images"
+  
+  - name: "Azure Monitor / Application Insights"
+    purpose: "Logging, monitoring, and diagnostics"
