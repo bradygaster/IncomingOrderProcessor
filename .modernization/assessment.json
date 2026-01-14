@@ -1,0 +1,279 @@
+{
+  "assessment": {
+    "version": "1.0",
+    "timestamp": "2026-01-14T16:26:05.610Z",
+    "application": {
+      "name": "IncomingOrderProcessor",
+      "type": "Windows Service",
+      "current_framework": ".NET Framework 4.8.1",
+      "target_framework": ".NET 10",
+      "project_format": "legacy"
+    },
+    "patterns_detected": [
+      {
+        "pattern": "Windows Service",
+        "technology": "System.ServiceProcess.ServiceBase",
+        "files": [
+          "IncomingOrderProcessor/Service1.cs",
+          "IncomingOrderProcessor/Program.cs",
+          "IncomingOrderProcessor/IncomingOrderProcessor.csproj"
+        ],
+        "instances": 1,
+        "migration_required": true,
+        "migration_target": "Worker Service (BackgroundService)",
+        "complexity": "medium",
+        "effort_estimate_hours": 4
+      },
+      {
+        "pattern": "MSMQ (Message Queue)",
+        "technology": "System.Messaging",
+        "files": [
+          "IncomingOrderProcessor/Service1.cs",
+          "IncomingOrderProcessor/IncomingOrderProcessor.csproj"
+        ],
+        "instances": 1,
+        "migration_required": true,
+        "migration_target": "Azure Service Bus",
+        "complexity": "medium",
+        "effort_estimate_hours": 6
+      },
+      {
+        "pattern": "Legacy Project Format",
+        "technology": "Old-style .csproj",
+        "files": [
+          "IncomingOrderProcessor/IncomingOrderProcessor.csproj"
+        ],
+        "instances": 1,
+        "migration_required": true,
+        "migration_target": "SDK-style .csproj",
+        "complexity": "low",
+        "effort_estimate_hours": 2
+      },
+      {
+        "pattern": ".NET Framework",
+        "technology": ".NET Framework 4.8.1",
+        "files": [
+          "IncomingOrderProcessor/IncomingOrderProcessor.csproj",
+          "IncomingOrderProcessor/App.config"
+        ],
+        "instances": 1,
+        "migration_required": true,
+        "migration_target": ".NET 10",
+        "complexity": "low",
+        "effort_estimate_hours": 2
+      },
+      {
+        "pattern": "XML Configuration",
+        "technology": "App.config",
+        "files": [
+          "IncomingOrderProcessor/App.config"
+        ],
+        "instances": 1,
+        "migration_required": true,
+        "migration_target": "appsettings.json",
+        "complexity": "low",
+        "effort_estimate_hours": 1
+      }
+    ],
+    "dependencies": {
+      "framework": [
+        "System",
+        "System.Configuration.Install",
+        "System.Core",
+        "System.Management",
+        "System.Messaging",
+        "System.ServiceProcess",
+        "System.Xml",
+        "System.Data",
+        "System.Net.Http"
+      ],
+      "nuget": [],
+      "incompatible": [
+        "System.Messaging",
+        "System.ServiceProcess",
+        "System.Configuration.Install",
+        "System.Management"
+      ]
+    },
+    "containerization": {
+      "container_ready": false,
+      "blockers": [
+        "Windows-specific dependencies (Windows Service)",
+        "MSMQ requires Windows Server",
+        "Old .NET Framework (not cross-platform)"
+      ],
+      "recommendations": [
+        "Migrate to Worker Service for container compatibility",
+        "Replace MSMQ with Azure Service Bus",
+        "Upgrade to .NET 10 for cross-platform support"
+      ]
+    },
+    "azure_readiness": {
+      "target_service": "Azure Container Apps",
+      "current_compatibility": "low",
+      "required_changes": [
+        "Remove Windows Service dependencies",
+        "Migrate to cloud-native messaging (Azure Service Bus)",
+        "Implement modern configuration (environment variables)",
+        "Add health check endpoints",
+        "Implement graceful shutdown"
+      ],
+      "recommended_features": [
+        "Managed Identity for secure authentication",
+        "Application Insights for observability",
+        "Azure Key Vault for secrets management",
+        "Virtual Network integration",
+        "Auto-scaling based on Service Bus queue length"
+      ]
+    },
+    "code_statistics": {
+      "total_files": 9,
+      "code_files": 6,
+      "config_files": 2,
+      "lines_of_code": 250,
+      "test_files": 0,
+      "has_tests": false
+    },
+    "migration_plan": {
+      "phases": [
+        {
+          "phase": 1,
+          "name": "Framework Upgrade",
+          "tasks": [
+            "Convert to SDK-style .csproj",
+            "Upgrade to .NET 10",
+            "Update namespaces and using statements",
+            "Replace App.config with appsettings.json"
+          ],
+          "effort_hours": 4,
+          "complexity": "low"
+        },
+        {
+          "phase": 2,
+          "name": "Architecture Modernization",
+          "tasks": [
+            "Convert Windows Service to Worker Service",
+            "Implement BackgroundService pattern",
+            "Add Microsoft.Extensions.Hosting",
+            "Update service lifecycle management"
+          ],
+          "effort_hours": 4,
+          "complexity": "medium"
+        },
+        {
+          "phase": 3,
+          "name": "Messaging Migration",
+          "tasks": [
+            "Replace System.Messaging with Azure.Messaging.ServiceBus",
+            "Update message serialization",
+            "Implement Service Bus receiver",
+            "Add connection string configuration",
+            "Test message processing"
+          ],
+          "effort_hours": 6,
+          "complexity": "medium"
+        },
+        {
+          "phase": 4,
+          "name": "Containerization",
+          "tasks": [
+            "Create Dockerfile",
+            "Create .dockerignore",
+            "Test container build",
+            "Optimize image size"
+          ],
+          "effort_hours": 3,
+          "complexity": "low"
+        },
+        {
+          "phase": 5,
+          "name": "Azure Deployment",
+          "tasks": [
+            "Create Azure resources (Service Bus, Container Apps)",
+            "Configure managed identity",
+            "Set up environment variables",
+            "Deploy to Container Apps",
+            "Verify functionality"
+          ],
+          "effort_hours": 4,
+          "complexity": "medium"
+        }
+      ],
+      "total_effort_hours": 21,
+      "estimated_duration_days": 3
+    },
+    "recommendations": {
+      "immediate": [
+        "Begin with framework upgrade to .NET 10",
+        "Convert to SDK-style project for better tooling",
+        "Set up Azure Service Bus namespace for testing"
+      ],
+      "short_term": [
+        "Implement Worker Service pattern",
+        "Migrate to Azure Service Bus",
+        "Add structured logging",
+        "Implement health checks"
+      ],
+      "long_term": [
+        "Add comprehensive error handling",
+        "Implement retry policies",
+        "Add unit and integration tests",
+        "Set up CI/CD pipeline",
+        "Implement Application Insights monitoring"
+      ]
+    },
+    "compatibility": {
+      "os": {
+        "current": "Windows only",
+        "target": "Cross-platform (Linux containers recommended)"
+      },
+      "hosting": {
+        "current": "On-premises Windows Server",
+        "target": "Azure Container Apps"
+      }
+    },
+    "security_considerations": [
+      "Use Managed Identity instead of connection strings where possible",
+      "Store secrets in Azure Key Vault",
+      "Run container as non-root user",
+      "Enable network isolation with VNet integration",
+      "Implement proper authentication for Service Bus",
+      "Use HTTPS/TLS for all communications"
+    ],
+    "risks": [
+      {
+        "risk": "Message format compatibility",
+        "severity": "medium",
+        "impact": "Messages may fail to deserialize after migration",
+        "mitigation": "Test message serialization thoroughly, consider using compatible formats"
+      },
+      {
+        "risk": "Service lifecycle differences",
+        "severity": "low",
+        "impact": "Minor timing differences in startup/shutdown",
+        "mitigation": "Test lifecycle events, implement proper graceful shutdown"
+      },
+      {
+        "risk": "Configuration changes",
+        "severity": "low",
+        "impact": "Need to update configuration management",
+        "mitigation": "Use modern configuration patterns with environment variables"
+      },
+      {
+        "risk": "Queue name differences",
+        "severity": "low",
+        "impact": "MSMQ path format differs from Service Bus",
+        "mitigation": "Map queue names appropriately, document changes"
+      }
+    ],
+    "success_criteria": [
+      "Application builds and runs on .NET 10",
+      "Successfully processes messages from Azure Service Bus",
+      "Runs as a containerized application",
+      "Deploys successfully to Azure Container Apps",
+      "Maintains all existing order processing functionality",
+      "Implements proper graceful shutdown",
+      "Handles errors gracefully with proper logging"
+    ]
+  }
+}

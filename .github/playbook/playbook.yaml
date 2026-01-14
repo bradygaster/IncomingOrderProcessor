@@ -1,0 +1,125 @@
+# Modernization Playbook
+# This file contains the migration preferences and strategy for modernizing the IncomingOrderProcessor application
+
+metadata:
+  version: "1.0"
+  created: "2026-01-14"
+  application: "IncomingOrderProcessor"
+  description: "Migration strategy for upgrading to .NET 10 and Azure Container Apps"
+
+# User preferences (based on: ".NET 10 and ready for deployment to Azure Container Apps")
+preferences:
+  target_framework: ".NET 10"
+  azure_compute: "Azure Container Apps"
+  windows_service_migration: "Worker Service"  # Modern BackgroundService pattern
+  msmq_migration: "Azure Service Bus"  # Cloud-native messaging
+
+# Detected patterns and migration strategies
+patterns:
+  - name: "Windows Service"
+    detected: true
+    current_technology: "System.ServiceProcess.ServiceBase"
+    migration_strategy:
+      target: "Worker Service"
+      approach: "BackgroundService"
+      reason: "Modern .NET approach, container-friendly, works seamlessly with Azure Container Apps"
+      steps:
+        - "Convert ServiceBase to BackgroundService"
+        - "Use Microsoft.Extensions.Hosting.Host"
+        - "Implement IHostedService pattern"
+        - "Update project to SDK-style .csproj"
+      
+  - name: "MSMQ"
+    detected: true
+    current_technology: "System.Messaging"
+    migration_strategy:
+      target: "Azure Service Bus"
+      approach: "Azure.Messaging.ServiceBus"
+      reason: "Cloud-native, fully managed, excellent Container Apps integration, similar queuing semantics"
+      steps:
+        - "Replace System.Messaging with Azure.Messaging.ServiceBus"
+        - "Update queue creation and connection logic"
+        - "Implement Service Bus receiver pattern"
+        - "Add connection string configuration"
+        - "Consider using managed identity for authentication"
+      considerations:
+        - "Azure Service Bus Queues provide similar FIFO guarantees"
+        - "Built-in dead-letter queue support"
+        - "No infrastructure to manage"
+        - "Scales automatically with Container Apps"
+
+  - name: ".NET Framework 4.8.1"
+    detected: true
+    current_technology: ".NET Framework 4.8.1"
+    migration_strategy:
+      target: ".NET 10"
+      approach: "SDK-style project"
+      reason: "Modern, cross-platform, container-ready, better performance"
+      steps:
+        - "Convert old-style .csproj to SDK-style"
+        - "Update to <TargetFramework>net10.0</TargetFramework>"
+        - "Remove App.config, use appsettings.json"
+        - "Update namespace declarations (file-scoped)"
+        - "Review and update NuGet packages"
+
+# Containerization strategy
+containerization:
+  dockerfile_approach: "Multi-stage build"
+  base_image: "mcr.microsoft.com/dotnet/aspnet:10.0"
+  build_image: "mcr.microsoft.com/dotnet/sdk:10.0"
+  runtime_user: "app"
+  security:
+    - "Run as non-root user"
+    - "Minimal base image"
+    - "No secrets in image"
+  
+# Azure Container Apps deployment
+azure_deployment:
+  compute: "Azure Container Apps"
+  configuration:
+    - "Use environment variables for configuration"
+    - "Store connection strings in Azure Key Vault"
+    - "Enable managed identity"
+    - "Configure health probes"
+    - "Set up scaling rules (CPU/Memory based)"
+  networking:
+    - "Virtual network integration for Service Bus"
+    - "Private endpoint for secure communication"
+
+# Assessment priorities
+priorities:
+  high:
+    - "Upgrade to .NET 10"
+    - "Migrate Windows Service to Worker Service"
+    - "Replace MSMQ with Azure Service Bus"
+    - "Create Dockerfile"
+  medium:
+    - "Add health checks"
+    - "Implement structured logging"
+    - "Add observability (Application Insights)"
+  low:
+    - "Optimize container image size"
+    - "Add integration tests"
+
+# Risk assessment
+risks:
+  - risk: "MSMQ to Service Bus migration"
+    severity: "Medium"
+    mitigation: "Test message serialization/deserialization thoroughly, use compatible message formats"
+  
+  - risk: "Windows Service timing differences"
+    severity: "Low"
+    mitigation: "Worker Service has similar lifecycle, test startup/shutdown behavior"
+  
+  - risk: "Configuration management"
+    severity: "Low"
+    mitigation: "Use modern configuration (appsettings.json, environment variables)"
+
+# Success criteria
+success_criteria:
+  - "Application runs on .NET 10"
+  - "Successfully builds as container image"
+  - "Deploys to Azure Container Apps"
+  - "Processes messages from Azure Service Bus"
+  - "Maintains existing order processing functionality"
+  - "Implements proper graceful shutdown"
