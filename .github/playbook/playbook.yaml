@@ -1,0 +1,124 @@
+# Modernization Playbook for IncomingOrderProcessor
+# Generated from user preferences: .NET 10, Azure Container Apps
+
+metadata:
+  repository: bradygaster/IncomingOrderProcessor
+  assessment_date: 2026-01-14
+  user_request: "i'd like to update these apps to .net 10 and deploy them to azure container apps"
+
+target:
+  framework: dotnet10
+  runtime_version: "10.0"
+  deployment_target: azure_container_apps
+
+patterns_detected:
+  - pattern: windows_service
+    current: System.ServiceProcess.ServiceBase
+    migration_path: worker_service
+    target: Microsoft.Extensions.Hosting.BackgroundService
+    priority: high
+    
+  - pattern: msmq
+    current: System.Messaging.MessageQueue
+    migration_path: azure_service_bus
+    target: Azure.Messaging.ServiceBus
+    priority: high
+    notes: "Alternative: Azure Storage Queues for simpler scenarios"
+    
+  - pattern: legacy_framework
+    current: .NET Framework 4.8.1
+    migration_path: dotnet_modern
+    target: .NET 10
+    priority: critical
+    
+  - pattern: legacy_csproj
+    current: Old-style XML project format
+    migration_path: sdk_style_csproj
+    target: SDK-style project format
+    priority: high
+
+migration_strategy:
+  approach: replatform_and_refactor
+  steps:
+    - name: Convert to SDK-style project
+      description: Migrate from legacy csproj to modern SDK-style format
+      
+    - name: Upgrade to .NET 10
+      description: Retarget project to .NET 10
+      
+    - name: Replace Windows Service
+      description: Convert ServiceBase to Worker Service with BackgroundService
+      packages:
+        - Microsoft.Extensions.Hosting
+        - Microsoft.Extensions.Hosting.WindowsServices
+        
+    - name: Replace MSMQ with Azure Service Bus
+      description: Migrate from System.Messaging to Azure Service Bus
+      packages:
+        - Azure.Messaging.ServiceBus
+      configuration_required:
+        - Azure Service Bus namespace
+        - Connection string or managed identity
+        
+    - name: Containerize application
+      description: Add Dockerfile for container deployment
+      
+    - name: Add Azure Container Apps configuration
+      description: Create container app deployment manifests
+
+recommendations:
+  compute:
+    primary: Azure Container Apps
+    reasoning: "Serverless container platform with auto-scaling, perfect for message processing workloads"
+    alternatives:
+      - name: Azure Kubernetes Service (AKS)
+        use_case: "If you need more control and orchestration features"
+      - name: Azure App Service
+        use_case: "For simpler web-based workloads"
+        
+  messaging:
+    primary: Azure Service Bus
+    reasoning: "Enterprise-grade messaging with MSMQ-like features (transactions, ordering, sessions)"
+    alternatives:
+      - name: Azure Storage Queues
+        use_case: "For simpler, cost-effective queue scenarios"
+      - name: Azure Event Hubs
+        use_case: "For high-throughput event streaming"
+        
+  development:
+    hosting_model: Worker Service
+    reasoning: "Modern replacement for Windows Services, works in containers"
+    
+  deployment:
+    ci_cd: GitHub Actions
+    container_registry: Azure Container Registry
+    infrastructure_as_code: Azure Bicep or Terraform
+
+effort_estimate:
+  complexity: medium
+  estimated_time: 2-4 days
+  breakdown:
+    - task: Project format and framework upgrade
+      effort: 0.5 days
+    - task: Windows Service to Worker Service migration
+      effort: 1 day
+    - task: MSMQ to Azure Service Bus migration
+      effort: 1-2 days
+    - task: Containerization and deployment setup
+      effort: 0.5-1 day
+
+risks:
+  - risk: Message format compatibility
+    mitigation: "Ensure Order serialization works with new Azure Service Bus JSON format"
+    
+  - risk: Configuration management
+    mitigation: "Use Azure Key Vault and managed identities for secrets"
+    
+  - risk: Local development environment
+    mitigation: "Use Azurite emulator or Azure Service Bus in dev namespace"
+
+next_steps:
+  - Create detailed assessment report
+  - Generate migration code samples
+  - Set up Azure resources
+  - Begin incremental migration
