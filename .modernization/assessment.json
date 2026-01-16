@@ -1,0 +1,338 @@
+{
+  "assessment_version": "1.0",
+  "assessment_date": "2026-01-16T21:56:14.686Z",
+  "repository": {
+    "name": "IncomingOrderProcessor",
+    "owner": "bradygaster"
+  },
+  "current_state": {
+    "framework": "net481",
+    "framework_version": ".NET Framework 4.8.1",
+    "application_type": "windows-service",
+    "project_format": "legacy-csproj",
+    "output_type": "WinExe"
+  },
+  "target_state": {
+    "framework": "net10.0",
+    "framework_version": ".NET 10",
+    "application_type": "worker-service",
+    "project_format": "sdk-style-csproj",
+    "compute_platform": "azure-container-apps"
+  },
+  "legacy_patterns": [
+    {
+      "category": "messaging",
+      "technology": "msmq",
+      "description": "System.Messaging namespace for MSMQ operations",
+      "locations": [
+        "IncomingOrderProcessor/Service1.cs"
+      ],
+      "impact": "high",
+      "migration_target": "azure-service-bus",
+      "migration_effort": "medium",
+      "details": {
+        "queue_path": ".\\Private$\\productcatalogorders",
+        "operations": [
+          "MessageQueue.Exists",
+          "MessageQueue.Create",
+          "MessageQueue constructor",
+          "XmlMessageFormatter",
+          "ReceiveCompleted event",
+          "BeginReceive/EndReceive async pattern"
+        ]
+      }
+    },
+    {
+      "category": "hosting",
+      "technology": "windows-service",
+      "description": "Windows Service using ServiceBase",
+      "locations": [
+        "IncomingOrderProcessor/Service1.cs",
+        "IncomingOrderProcessor/Program.cs",
+        "IncomingOrderProcessor/ProjectInstaller.cs"
+      ],
+      "impact": "high",
+      "migration_target": "worker-service",
+      "migration_effort": "low",
+      "details": {
+        "base_class": "ServiceBase",
+        "entry_point": "ServiceBase.Run",
+        "lifecycle_methods": ["OnStart", "OnStop"]
+      }
+    },
+    {
+      "category": "project-system",
+      "technology": "legacy-csproj",
+      "description": "Old-style .csproj format with ToolsVersion",
+      "locations": [
+        "IncomingOrderProcessor/IncomingOrderProcessor.csproj"
+      ],
+      "impact": "medium",
+      "migration_target": "sdk-style-csproj",
+      "migration_effort": "low",
+      "details": {
+        "tools_version": "15.0",
+        "explicit_references": true,
+        "explicit_file_includes": true
+      }
+    },
+    {
+      "category": "serialization",
+      "technology": "xml-serialization",
+      "description": "XML serialization with [Serializable] attribute",
+      "locations": [
+        "IncomingOrderProcessor/Order.cs"
+      ],
+      "impact": "low",
+      "migration_target": "json-serialization",
+      "migration_effort": "low",
+      "details": {
+        "formatter": "XmlMessageFormatter",
+        "recommendation": "Modern JSON serialization preferred for Azure Service Bus"
+      }
+    },
+    {
+      "category": "configuration",
+      "technology": "app-config",
+      "description": "App.config for configuration",
+      "locations": [
+        "IncomingOrderProcessor/App.config"
+      ],
+      "impact": "low",
+      "migration_target": "appsettings-json",
+      "migration_effort": "low",
+      "details": {
+        "recommendation": "Use appsettings.json with IConfiguration"
+      }
+    }
+  ],
+  "dependencies": [
+    {
+      "name": "System.Messaging",
+      "current_version": "framework",
+      "status": "deprecated",
+      "replacement": "Azure.Messaging.ServiceBus",
+      "replacement_version": "latest",
+      "notes": "MSMQ is Windows-only and not available in .NET Core/.NET 5+"
+    },
+    {
+      "name": "System.ServiceProcess",
+      "current_version": "framework",
+      "status": "deprecated",
+      "replacement": "Microsoft.Extensions.Hosting",
+      "replacement_version": "latest",
+      "notes": "Windows Service support available through Worker Service template"
+    }
+  ],
+  "code_changes_required": [
+    {
+      "file": "Service1.cs",
+      "change_type": "refactor",
+      "description": "Convert ServiceBase to BackgroundService",
+      "complexity": "medium",
+      "details": "Replace OnStart/OnStop with ExecuteAsync method"
+    },
+    {
+      "file": "Service1.cs",
+      "change_type": "replace_technology",
+      "description": "Replace MSMQ with Azure Service Bus",
+      "complexity": "medium",
+      "details": "Replace MessageQueue operations with ServiceBusClient/ServiceBusProcessor"
+    },
+    {
+      "file": "Program.cs",
+      "change_type": "refactor",
+      "description": "Convert to Worker Service host",
+      "complexity": "low",
+      "details": "Use Host.CreateDefaultBuilder with worker service registration"
+    },
+    {
+      "file": "IncomingOrderProcessor.csproj",
+      "change_type": "replace",
+      "description": "Convert to SDK-style project",
+      "complexity": "low",
+      "details": "Replace entire project file with modern SDK-style format"
+    },
+    {
+      "file": "Order.cs",
+      "change_type": "modify",
+      "description": "Update serialization attributes",
+      "complexity": "low",
+      "details": "Remove [Serializable], ensure JSON serialization compatibility"
+    },
+    {
+      "file": "App.config",
+      "change_type": "replace",
+      "description": "Convert to appsettings.json",
+      "complexity": "low",
+      "details": "Create appsettings.json with Service Bus connection string"
+    }
+  ],
+  "new_files_required": [
+    {
+      "file": "Dockerfile",
+      "purpose": "Container image definition for Azure Container Apps",
+      "priority": "high"
+    },
+    {
+      "file": "appsettings.json",
+      "purpose": "Modern configuration file",
+      "priority": "high"
+    },
+    {
+      "file": ".dockerignore",
+      "purpose": "Optimize Docker build context",
+      "priority": "medium"
+    },
+    {
+      "file": "deploy/main.bicep",
+      "purpose": "Azure infrastructure as code",
+      "priority": "medium"
+    }
+  ],
+  "files_to_remove": [
+    {
+      "file": "ProjectInstaller.cs",
+      "reason": "Windows Service installer not needed for Worker Service"
+    },
+    {
+      "file": "ProjectInstaller.Designer.cs",
+      "reason": "Windows Service installer not needed for Worker Service"
+    },
+    {
+      "file": "ProjectInstaller.resx",
+      "reason": "Windows Service installer not needed for Worker Service"
+    },
+    {
+      "file": "Service1.Designer.cs",
+      "reason": "Not needed for Worker Service"
+    },
+    {
+      "file": "App.config",
+      "reason": "Replaced by appsettings.json"
+    }
+  ],
+  "breaking_changes": [
+    {
+      "category": "platform",
+      "description": "Application will no longer run on Windows without MSMQ",
+      "mitigation": "Azure Service Bus provides cloud-based messaging"
+    },
+    {
+      "category": "deployment",
+      "description": "Windows Service installation process changes to containerized deployment",
+      "mitigation": "Azure Container Apps handles hosting and scaling"
+    },
+    {
+      "category": "configuration",
+      "description": "Configuration moved from App.config to appsettings.json and environment variables",
+      "mitigation": "Azure Container Apps supports environment variables and secrets"
+    }
+  ],
+  "azure_resources_needed": [
+    {
+      "resource_type": "Microsoft.ServiceBus/namespaces",
+      "name": "Service Bus Namespace",
+      "purpose": "Replace MSMQ with cloud-native messaging",
+      "configuration": {
+        "sku": "Standard or Premium",
+        "queue_name": "productcatalogorders"
+      }
+    },
+    {
+      "resource_type": "Microsoft.App/containerApps",
+      "name": "Container App",
+      "purpose": "Host the modernized worker service",
+      "configuration": {
+        "min_replicas": 1,
+        "max_replicas": 10,
+        "cpu": "0.25",
+        "memory": "0.5Gi"
+      }
+    },
+    {
+      "resource_type": "Microsoft.App/managedEnvironments",
+      "name": "Container Apps Environment",
+      "purpose": "Container orchestration and management"
+    },
+    {
+      "resource_type": "Microsoft.ContainerRegistry/registries",
+      "name": "Azure Container Registry",
+      "purpose": "Store container images",
+      "configuration": {
+        "sku": "Basic"
+      }
+    },
+    {
+      "resource_type": "Microsoft.OperationalInsights/workspaces",
+      "name": "Log Analytics Workspace",
+      "purpose": "Monitoring and diagnostics"
+    }
+  ],
+  "migration_complexity": {
+    "overall": "medium",
+    "code_changes": "medium",
+    "testing_effort": "medium",
+    "infrastructure": "medium",
+    "estimated_effort_days": "3-5"
+  },
+  "risks": [
+    {
+      "category": "functionality",
+      "description": "Message format compatibility between MSMQ and Service Bus",
+      "severity": "medium",
+      "mitigation": "Implement message adapters or ensure senders are updated concurrently"
+    },
+    {
+      "category": "performance",
+      "description": "Network latency with cloud-based messaging vs local MSMQ",
+      "severity": "low",
+      "mitigation": "Azure Service Bus is highly performant; test throughput requirements"
+    },
+    {
+      "category": "cost",
+      "description": "Azure Service Bus and Container Apps have ongoing costs",
+      "severity": "low",
+      "mitigation": "Calculate costs based on message volume and scale configuration"
+    }
+  ],
+  "recommendations": [
+    {
+      "priority": "high",
+      "recommendation": "Start with Service Bus migration",
+      "rationale": "Messaging is the core functionality; ensure compatibility first"
+    },
+    {
+      "priority": "high",
+      "recommendation": "Implement structured logging",
+      "rationale": "Better observability in Azure with Application Insights integration"
+    },
+    {
+      "priority": "medium",
+      "recommendation": "Add health checks",
+      "rationale": "Container Apps can use health probes for better reliability"
+    },
+    {
+      "priority": "medium",
+      "recommendation": "Implement graceful shutdown",
+      "rationale": "Ensure messages are processed before container stops"
+    },
+    {
+      "priority": "low",
+      "recommendation": "Add retry policies",
+      "rationale": "Handle transient failures with Service Bus"
+    }
+  ],
+  "next_steps": [
+    "Review and approve this assessment",
+    "Provision Azure Service Bus namespace and queue",
+    "Update code to use Azure Service Bus SDK",
+    "Convert to SDK-style project targeting .NET 10",
+    "Convert Windows Service to Worker Service",
+    "Create Dockerfile and container image",
+    "Create Bicep templates for Azure resources",
+    "Test locally with Azure Service Bus",
+    "Deploy to Azure Container Apps",
+    "Update any message producers to send to Service Bus"
+  ]
+}
