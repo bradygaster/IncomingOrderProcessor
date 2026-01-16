@@ -1,0 +1,23 @@
+version: '3.8'
+
+services:
+  incoming-order-processor:
+    # Override for local development
+    environment:
+      - DOTNET_ENVIRONMENT=Development
+    # Enable debug logging
+    # Add any local development specific environment variables here
+    
+    # Local volume mounts for development (optional)
+    # volumes:
+    #   - ./logs:C:/app/logs
+    
+    # Resource limits for local development
+    deploy:
+      resources:
+        limits:
+          cpus: '2.0'
+          memory: 2G
+        reservations:
+          cpus: '1.0'
+          memory: 1G

@@ -1,0 +1,29 @@
+version: '3.8'
+
+services:
+  incoming-order-processor:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    image: incoming-order-processor:latest
+    container_name: incoming-order-processor
+    # Note: This application requires Windows containers
+    platform: windows
+    environment:
+      # Add environment variables as needed
+      - DOTNET_ENVIRONMENT=Production
+    # Windows containers may require different networking configuration
+    # Port exposure can be added if the application exposes any HTTP endpoints
+    restart: unless-stopped
+    # Volumes for persistent data if needed
+    volumes:
+      - msmq-data:C:/Windows/System32/msmq/storage
+    networks:
+      - order-processing-network
+
+networks:
+  order-processing-network:
+    driver: nat
+
+volumes:
+  msmq-data:
