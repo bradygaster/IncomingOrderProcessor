@@ -1,0 +1,47 @@
+# Application Modernization Playbook
+# This file defines preferences for migrating this application to modern Azure technologies
+
+# Target Framework
+framework:
+  target: net10.0
+  current: net481
+
+# Compute Platform
+compute:
+  target: azure-container-apps
+  current: windows-service
+
+# Migration Mappings
+migrations:
+  # Messaging
+  - from: msmq
+    to: azure-service-bus
+    description: Replace MSMQ (System.Messaging) with Azure Service Bus for cloud-native messaging
+    
+  # Service Type
+  - from: windows-service
+    to: worker-service
+    description: Modernize Windows Service to .NET Worker Service for cross-platform support
+    
+  # Project Format
+  - from: legacy-csproj
+    to: sdk-style-csproj
+    description: Update to modern SDK-style project format
+
+# Azure Resources Required
+azure_resources:
+  - type: service-bus-namespace
+    purpose: Replace MSMQ queues with Azure Service Bus queues
+  - type: container-apps-environment
+    purpose: Host the modernized worker service
+  - type: container-registry
+    purpose: Store container images
+  - type: log-analytics-workspace
+    purpose: Monitoring and diagnostics
+
+# Deployment Strategy
+deployment:
+  containerization: true
+  dockerfile_required: true
+  helm_chart: false
+  bicep_templates: recommended
