@@ -1,0 +1,65 @@
+# Modernization Playbook for IncomingOrderProcessor
+# This file defines the migration preferences and targets for modernizing this application
+
+# Target Framework
+targetFramework: net10.0
+
+# Deployment Target
+deployment:
+  platform: azure-container-apps
+  containerRegistry: true
+  
+# Migration Mappings
+migrations:
+  # Windows Service to Worker Service
+  windowsService:
+    target: worker-service
+    pattern: ServiceBase
+    replacement: BackgroundService
+    
+  # MSMQ to Azure Service Bus
+  messaging:
+    source: msmq
+    target: azure-service-bus
+    sourcePattern: System.Messaging
+    targetPackage: Azure.Messaging.ServiceBus
+    queueMapping:
+      - source: ".\Private$\productcatalogorders"
+        target: "productcatalogorders"
+        
+  # Project Format
+  projectFormat:
+    source: legacy-csproj
+    target: sdk-style-csproj
+    
+# Default Preferences (Microsoft-recommended)
+preferences:
+  # Framework Upgrades
+  entityFramework: 
+    source: ef6
+    target: efcore9
+    
+  wcf:
+    target: grpc
+    
+  # Containerization
+  containerization:
+    enabled: true
+    baseImage: mcr.microsoft.com/dotnet/aspnet:10.0
+    
+  # Logging and Monitoring
+  observability:
+    logging: Microsoft.Extensions.Logging
+    telemetry: Application Insights
+    
+# Package Updates Required
+packages:
+  add:
+    - Microsoft.Extensions.Hosting (>= 10.0.0)
+    - Azure.Messaging.ServiceBus (>= 7.0.0)
+    - Microsoft.Extensions.Configuration
+    - Microsoft.Extensions.DependencyInjection
+  remove:
+    - System.ServiceProcess
+    - System.Messaging
+    - System.Configuration.Install

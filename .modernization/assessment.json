@@ -1,0 +1,366 @@
+{
+  "assessmentVersion": "1.0",
+  "assessmentDate": "2026-01-16T23:48:11.753Z",
+  "repository": {
+    "name": "IncomingOrderProcessor",
+    "owner": "bradygaster"
+  },
+  "currentState": {
+    "framework": ".NET Framework 4.8.1",
+    "projectType": "Windows Service",
+    "deploymentModel": "Windows Server",
+    "projectFormat": "Legacy .csproj (non-SDK-style)",
+    "dependencies": [
+      {
+        "name": "System.ServiceProcess",
+        "purpose": "Windows Service hosting",
+        "modernReplacement": "Microsoft.Extensions.Hosting"
+      },
+      {
+        "name": "System.Messaging",
+        "purpose": "MSMQ message queue processing",
+        "modernReplacement": "Azure.Messaging.ServiceBus"
+      },
+      {
+        "name": "System.Configuration.Install",
+        "purpose": "Windows Service installation",
+        "modernReplacement": "Not needed (containerized deployment)"
+      }
+    ]
+  },
+  "targetState": {
+    "framework": ".NET 10",
+    "projectType": "Worker Service",
+    "deploymentModel": "Azure Container Apps",
+    "projectFormat": "SDK-style .csproj",
+    "targetDependencies": [
+      {
+        "name": "Microsoft.Extensions.Hosting",
+        "version": ">=10.0.0",
+        "purpose": "Modern hosting model for background services"
+      },
+      {
+        "name": "Azure.Messaging.ServiceBus",
+        "version": ">=7.0.0",
+        "purpose": "Azure Service Bus message processing"
+      },
+      {
+        "name": "Microsoft.Extensions.Configuration",
+        "purpose": "Configuration management"
+      },
+      {
+        "name": "Microsoft.Extensions.DependencyInjection",
+        "purpose": "Dependency injection container"
+      }
+    ]
+  },
+  "legacyPatterns": [
+    {
+      "id": "LP001",
+      "category": "Framework",
+      "name": ".NET Framework 4.8.1",
+      "severity": "Critical",
+      "location": "IncomingOrderProcessor/IncomingOrderProcessor.csproj",
+      "description": "Application uses .NET Framework 4.8.1 which is Windows-only and not container-friendly",
+      "recommendation": "Migrate to .NET 10 for cross-platform support and modern features",
+      "effort": "High",
+      "impact": "High"
+    },
+    {
+      "id": "LP002",
+      "category": "Hosting",
+      "name": "Windows Service (ServiceBase)",
+      "severity": "Critical",
+      "location": "IncomingOrderProcessor/Service1.cs",
+      "description": "Application uses Windows Service (ServiceBase) which requires Windows OS and cannot run in containers easily",
+      "recommendation": "Migrate to BackgroundService/IHostedService using Microsoft.Extensions.Hosting",
+      "effort": "Medium",
+      "impact": "High"
+    },
+    {
+      "id": "LP003",
+      "category": "Messaging",
+      "name": "MSMQ (System.Messaging)",
+      "severity": "Critical",
+      "location": "IncomingOrderProcessor/Service1.cs",
+      "description": "Application uses MSMQ which is Windows-only and not available in Azure Container Apps",
+      "recommendation": "Migrate to Azure Service Bus for cloud-native message processing",
+      "effort": "High",
+      "impact": "High"
+    },
+    {
+      "id": "LP004",
+      "category": "Project Format",
+      "name": "Legacy .csproj format",
+      "severity": "Medium",
+      "location": "IncomingOrderProcessor/IncomingOrderProcessor.csproj",
+      "description": "Project uses old-style .csproj format with verbose XML and manual package references",
+      "recommendation": "Convert to SDK-style .csproj for cleaner project files and better tooling support",
+      "effort": "Low",
+      "impact": "Medium"
+    },
+    {
+      "id": "LP005",
+      "category": "Configuration",
+      "name": "App.config",
+      "severity": "Low",
+      "location": "IncomingOrderProcessor/App.config",
+      "description": "Application uses App.config which is replaced by appsettings.json in modern .NET",
+      "recommendation": "Migrate configuration to appsettings.json and use Microsoft.Extensions.Configuration",
+      "effort": "Low",
+      "impact": "Low"
+    },
+    {
+      "id": "LP006",
+      "category": "Deployment",
+      "name": "Windows Service Installer",
+      "severity": "Medium",
+      "location": "IncomingOrderProcessor/ProjectInstaller.cs",
+      "description": "Application includes Windows Service installer components not needed for container deployment",
+      "recommendation": "Remove ProjectInstaller.cs and related files, use container orchestration instead",
+      "effort": "Low",
+      "impact": "Low"
+    }
+  ],
+  "messagingAnalysis": {
+    "currentImplementation": "MSMQ",
+    "queuePath": ".\\Private$\\productcatalogorders",
+    "messageFormat": "XML Serialization",
+    "messageType": "Order",
+    "processingModel": "Async event-driven (ReceiveCompleted)",
+    "targetImplementation": {
+      "service": "Azure Service Bus",
+      "queueName": "productcatalogorders",
+      "messageFormat": "JSON (recommended) or preserve XML",
+      "processingModel": "ServiceBusProcessor with async message handler",
+      "requiredChanges": [
+        "Replace MessageQueue with ServiceBusClient",
+        "Replace XmlMessageFormatter with JSON serialization (or ServiceBusReceivedMessage.Body)",
+        "Replace ReceiveCompleted event with ServiceBusProcessor",
+        "Add connection string configuration",
+        "Handle message completion/abandonment explicitly"
+      ]
+    }
+  },
+  "architecturalChanges": [
+    {
+      "component": "Service Hosting",
+      "currentApproach": "ServiceBase with OnStart/OnStop",
+      "modernApproach": "BackgroundService with ExecuteAsync",
+      "benefits": [
+        "Cross-platform compatibility",
+        "Better testability",
+        "Modern async patterns",
+        "Built-in dependency injection"
+      ]
+    },
+    {
+      "component": "Message Processing",
+      "currentApproach": "MSMQ with event-driven receive",
+      "modernApproach": "Azure Service Bus with ServiceBusProcessor",
+      "benefits": [
+        "Cloud-native scalability",
+        "Better reliability and durability",
+        "No infrastructure management",
+        "Built-in dead-letter queue support"
+      ]
+    },
+    {
+      "component": "Configuration",
+      "currentApproach": "App.config XML",
+      "modernApproach": "appsettings.json with IConfiguration",
+      "benefits": [
+        "JSON format",
+        "Environment-specific overrides",
+        "Azure Key Vault integration support",
+        "Better structure and intellisense"
+      ]
+    },
+    {
+      "component": "Dependency Management",
+      "currentApproach": "Manual assembly references",
+      "modernApproach": "NuGet PackageReference in SDK-style project",
+      "benefits": [
+        "Cleaner project files",
+        "Automatic transitive dependency resolution",
+        "Better tooling support"
+      ]
+    }
+  ],
+  "containerization": {
+    "recommended": true,
+    "baseImage": "mcr.microsoft.com/dotnet/runtime:10.0",
+    "requiresDockerfile": true,
+    "environmentVariables": [
+      "AZURE_SERVICEBUS_CONNECTION_STRING",
+      "AZURE_SERVICEBUS_QUEUE_NAME"
+    ],
+    "considerations": [
+      "Remove Windows-specific dependencies",
+      "Configure logging for container environments",
+      "Use environment variables for configuration",
+      "Implement graceful shutdown handling"
+    ]
+  },
+  "azureContainerApps": {
+    "deployment": {
+      "recommended": true,
+      "scalingRules": [
+        {
+          "name": "servicebus-queue-length",
+          "type": "azure-servicebus",
+          "metadata": {
+            "queueName": "productcatalogorders",
+            "messageCount": "5"
+          }
+        }
+      ],
+      "resources": {
+        "cpu": "0.25",
+        "memory": "0.5Gi"
+      }
+    },
+    "configuration": {
+      "secrets": [
+        {
+          "name": "servicebus-connection-string",
+          "source": "Azure Key Vault"
+        }
+      ],
+      "environmentVariables": [
+        {
+          "name": "AZURE_SERVICEBUS_CONNECTION_STRING",
+          "secretRef": "servicebus-connection-string"
+        },
+        {
+          "name": "AZURE_SERVICEBUS_QUEUE_NAME",
+          "value": "productcatalogorders"
+        }
+      ]
+    }
+  },
+  "migrationRoadmap": [
+    {
+      "phase": "1",
+      "name": "Project Modernization",
+      "tasks": [
+        "Convert to SDK-style .csproj",
+        "Upgrade to .NET 10",
+        "Update to PackageReference format",
+        "Remove Windows-specific dependencies"
+      ],
+      "effort": "Medium",
+      "risk": "Low"
+    },
+    {
+      "phase": "2",
+      "name": "Service Model Migration",
+      "tasks": [
+        "Convert ServiceBase to BackgroundService",
+        "Implement IHostedService pattern",
+        "Add Microsoft.Extensions.Hosting",
+        "Remove ProjectInstaller and related files"
+      ],
+      "effort": "Medium",
+      "risk": "Medium"
+    },
+    {
+      "phase": "3",
+      "name": "Messaging Migration",
+      "tasks": [
+        "Replace System.Messaging with Azure.Messaging.ServiceBus",
+        "Implement ServiceBusProcessor",
+        "Update message serialization (XML to JSON or preserve)",
+        "Add connection string configuration",
+        "Test message processing flow"
+      ],
+      "effort": "High",
+      "risk": "High"
+    },
+    {
+      "phase": "4",
+      "name": "Configuration Migration",
+      "tasks": [
+        "Replace App.config with appsettings.json",
+        "Implement IConfiguration",
+        "Add environment-specific configuration files",
+        "Configure for Azure Key Vault (optional)"
+      ],
+      "effort": "Low",
+      "risk": "Low"
+    },
+    {
+      "phase": "5",
+      "name": "Containerization",
+      "tasks": [
+        "Create Dockerfile",
+        "Configure for container environment",
+        "Test locally with Docker",
+        "Set up proper logging for containers"
+      ],
+      "effort": "Medium",
+      "risk": "Medium"
+    },
+    {
+      "phase": "6",
+      "name": "Azure Deployment",
+      "tasks": [
+        "Create Azure Container Apps environment",
+        "Configure Azure Service Bus namespace and queue",
+        "Set up scaling rules",
+        "Deploy and validate",
+        "Configure monitoring and alerts"
+      ],
+      "effort": "Medium",
+      "risk": "Medium"
+    }
+  ],
+  "estimatedEffort": {
+    "totalHours": "40-60 hours",
+    "breakdown": {
+      "projectModernization": "8-10 hours",
+      "serviceModelMigration": "8-12 hours",
+      "messagingMigration": "16-24 hours",
+      "configurationMigration": "2-4 hours",
+      "containerization": "4-6 hours",
+      "azureDeployment": "4-8 hours"
+    }
+  },
+  "risks": [
+    {
+      "id": "R001",
+      "description": "Message format compatibility during migration",
+      "impact": "High",
+      "mitigation": "Implement dual-read capability or coordinate cutover window"
+    },
+    {
+      "id": "R002",
+      "description": "Azure Service Bus connection reliability",
+      "impact": "Medium",
+      "mitigation": "Implement retry policies and dead-letter queue handling"
+    },
+    {
+      "id": "R003",
+      "description": "Behavioral differences between MSMQ and Service Bus",
+      "impact": "Medium",
+      "mitigation": "Thorough testing of message processing, ordering, and error handling"
+    }
+  ],
+  "recommendations": {
+    "immediate": [
+      "Create Azure Service Bus namespace and queue for testing",
+      "Set up development environment with .NET 10 SDK",
+      "Review and document current MSMQ message formats and volumes"
+    ],
+    "shortTerm": [
+      "Start with project modernization and framework upgrade",
+      "Implement parallel testing environment",
+      "Create comprehensive integration tests"
+    ],
+    "longTerm": [
+      "Consider implementing Application Insights for monitoring",
+      "Evaluate need for message dead-letter queue handling",
+      "Plan for disaster recovery and backup strategies"
+    ]
+  }
+}
