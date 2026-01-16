@@ -14,6 +14,7 @@ namespace IncomingOrderProcessor
         private ServiceBusProcessor processor;
         private string connectionString;
         private string queueName;
+        private Task processingTask;
 
         public Service1()
         {
@@ -36,7 +37,11 @@ namespace IncomingOrderProcessor
                 processor.ProcessMessageAsync += ProcessMessageHandler;
                 processor.ProcessErrorAsync += ProcessErrorHandler;
 
-                processor.StartProcessingAsync().GetAwaiter().GetResult();
+                // Start processing in a background task to avoid blocking OnStart
+                processingTask = Task.Run(async () =>
+                {
+                    await processor.StartProcessingAsync();
+                });
 
                 LogMessage($"Order processing service started successfully. Watching queue: {queueName}");
             }
@@ -53,13 +58,20 @@ namespace IncomingOrderProcessor
             {
                 if (processor != null)
                 {
-                    processor.StopProcessingAsync().GetAwaiter().GetResult();
-                    processor.DisposeAsync().GetAwaiter().GetResult();
+                    // Use Task.Run with timeout to avoid deadlocks
+                    Task.Run(async () =>
+                    {
+                        await processor.StopProcessingAsync();
+                        await processor.DisposeAsync();
+                    }).Wait(TimeSpan.FromSeconds(30));
                 }
 
                 if (serviceBusClient != null)
                 {
-                    serviceBusClient.DisposeAsync().GetAwaiter().GetResult();
+                    Task.Run(async () =>
+                    {
+                        await serviceBusClient.DisposeAsync();
+                    }).Wait(TimeSpan.FromSeconds(10));
                 }
 
                 LogMessage("Order processing service stopped.");

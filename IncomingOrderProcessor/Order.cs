@@ -22,7 +22,6 @@ namespace IncomingOrderProcessor
         }
     }
 
-    [Serializable]
     public class OrderItem
     {
         public int ProductId { get; set; }
