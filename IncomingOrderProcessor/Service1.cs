@@ -1,14 +1,19 @@
 ﻿using System;
-using System.Messaging;
+using Azure.Messaging.ServiceBus;
 using System.ServiceProcess;
 using System.Text;
+using System.Text.Json;
+using System.Threading.Tasks;
+using System.IO;
 
 namespace IncomingOrderProcessor
 {
     public partial class Service1 : ServiceBase
     {
-        private MessageQueue orderQueue;
-        private const string QueuePath = @".\Private$\productcatalogorders";
+        private ServiceBusClient serviceBusClient;
+        private ServiceBusProcessor processor;
+        private string connectionString;
+        private string queueName;
 
         public Service1()
         {
@@ -19,22 +24,21 @@ namespace IncomingOrderProcessor
         {
             try
             {
-                if (!MessageQueue.Exists(QueuePath))
-                {
-                    orderQueue = MessageQueue.Create(QueuePath);
-                    LogMessage("Created new queue: " + QueuePath);
-                }
-                else
-                {
-                    orderQueue = new MessageQueue(QueuePath);
-                }
+                LoadConfiguration();
 
-                orderQueue.Formatter = new XmlMessageFormatter(new Type[] { typeof(Order) });
-                
-                orderQueue.ReceiveCompleted += new ReceiveCompletedEventHandler(OnOrderReceived);
-                orderQueue.BeginReceive();
+                serviceBusClient = new ServiceBusClient(connectionString);
+                processor = serviceBusClient.CreateProcessor(queueName, new ServiceBusProcessorOptions
+                {
+                    MaxConcurrentCalls = 1,
+                    AutoCompleteMessages = false
+                });
 
-                LogMessage("Order processing service started successfully. Watching queue: " + QueuePath);
+                processor.ProcessMessageAsync += ProcessMessageHandler;
+                processor.ProcessErrorAsync += ProcessErrorHandler;
+
+                processor.StartProcessingAsync().GetAwaiter().GetResult();
+
+                LogMessage($"Order processing service started successfully. Watching queue: {queueName}");
             }
             catch (Exception ex)
             {
@@ -47,12 +51,17 @@ namespace IncomingOrderProcessor
         {
             try
             {
-                if (orderQueue != null)
+                if (processor != null)
                 {
-                    orderQueue.ReceiveCompleted -= OnOrderReceived;
-                    orderQueue.Close();
-                    orderQueue.Dispose();
+                    processor.StopProcessingAsync().GetAwaiter().GetResult();
+                    processor.DisposeAsync().GetAwaiter().GetResult();
                 }
+
+                if (serviceBusClient != null)
+                {
+                    serviceBusClient.DisposeAsync().GetAwaiter().GetResult();
+                }
+
                 LogMessage("Order processing service stopped.");
             }
             catch (Exception ex)
@@ -61,29 +70,64 @@ namespace IncomingOrderProcessor
             }
         }
 
-        private void OnOrderReceived(object sender, ReceiveCompletedEventArgs e)
+        private async Task ProcessMessageHandler(ProcessMessageEventArgs args)
         {
             try
             {
-                MessageQueue queue = (MessageQueue)sender;
-                Message message = queue.EndReceive(e.AsyncResult);
+                string body = args.Message.Body.ToString();
+                Order order = JsonSerializer.Deserialize<Order>(body);
 
-                Order order = (Order)message.Body;
-                
                 WriteOrderToConsole(order);
-                
+
+                await args.CompleteMessageAsync(args.Message);
+
                 LogMessage($"Order {order.OrderId} processed successfully and removed from queue.");
-                
-                queue.BeginReceive();
             }
             catch (Exception ex)
             {
                 LogMessage("Error processing order: " + ex.Message);
-                
-                if (orderQueue != null)
+                // Don't complete the message on error - it will be retried
+            }
+        }
+
+        private Task ProcessErrorHandler(ProcessErrorEventArgs args)
+        {
+            LogMessage($"Error in message processing: {args.Exception.Message}");
+            LogMessage($"Error Source: {args.ErrorSource}");
+            LogMessage($"Entity Path: {args.EntityPath}");
+            return Task.CompletedTask;
+        }
+
+        private void LoadConfiguration()
+        {
+            try
+            {
+                string configPath = Path.Combine(AppDomain.CurrentDomain.BaseDirectory, "appsettings.json");
+                if (!File.Exists(configPath))
                 {
-                    orderQueue.BeginReceive();
+                    throw new FileNotFoundException("Configuration file not found: appsettings.json");
                 }
+
+                string json = File.ReadAllText(configPath);
+                var config = JsonSerializer.Deserialize<ConfigurationRoot>(json);
+
+                connectionString = config.ServiceBus.ConnectionString;
+                queueName = config.ServiceBus.QueueName;
+
+                if (string.IsNullOrWhiteSpace(connectionString))
+                {
+                    throw new InvalidOperationException("ServiceBus:ConnectionString is not configured");
+                }
+
+                if (string.IsNullOrWhiteSpace(queueName))
+                {
+                    throw new InvalidOperationException("ServiceBus:QueueName is not configured");
+                }
+            }
+            catch (Exception ex)
+            {
+                LogMessage("Error loading configuration: " + ex.Message);
+                throw;
             }
         }
 
@@ -137,5 +181,16 @@ namespace IncomingOrderProcessor
             string logMessage = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}";
             Console.WriteLine(logMessage);
         }
+    }
+
+    public class ConfigurationRoot
+    {
+        public ServiceBusConfiguration ServiceBus { get; set; }
+    }
+
+    public class ServiceBusConfiguration
+    {
+        public string ConnectionString { get; set; }
+        public string QueueName { get; set; }
     }
 }

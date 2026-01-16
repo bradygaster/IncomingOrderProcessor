@@ -3,7 +3,6 @@ using System.Collections.Generic;
 
 namespace IncomingOrderProcessor
 {
-    [Serializable]
     public class Order
     {
         public string OrderId { get; set; }
