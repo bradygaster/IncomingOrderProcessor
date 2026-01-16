@@ -40,7 +40,15 @@ namespace IncomingOrderProcessor
                 // Start processing in a background task to avoid blocking OnStart
                 processingTask = Task.Run(async () =>
                 {
-                    await processor.StartProcessingAsync();
+                    try
+                    {
+                        await processor.StartProcessingAsync();
+                    }
+                    catch (Exception ex)
+                    {
+                        LogMessage($"Error in processing task: {ex.Message}");
+                        throw;
+                    }
                 });
 
                 LogMessage($"Order processing service started successfully. Watching queue: {queueName}");
@@ -58,7 +66,8 @@ namespace IncomingOrderProcessor
             {
                 if (processor != null)
                 {
-                    // Use Task.Run with timeout to avoid deadlocks
+                    // Using Task.Run with timeout is the recommended pattern for Windows Services
+                    // to avoid deadlocks when disposing async resources in synchronous OnStop
                     Task.Run(async () =>
                     {
                         await processor.StopProcessingAsync();
@@ -122,6 +131,11 @@ namespace IncomingOrderProcessor
 
                 string json = File.ReadAllText(configPath);
                 var config = JsonSerializer.Deserialize<ConfigurationRoot>(json);
+
+                if (config == null || config.ServiceBus == null)
+                {
+                    throw new InvalidOperationException("Invalid configuration: ServiceBus section is missing");
+                }
 
                 connectionString = config.ServiceBus.ConnectionString;
                 queueName = config.ServiceBus.QueueName;
