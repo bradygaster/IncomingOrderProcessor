@@ -33,12 +33,14 @@ public class Worker : BackgroundService
             LogMessage("Order processing service started successfully. Watching queue: " + QueuePath);
 
             // Process messages in a loop
+            // Note: Using synchronous Receive() because Experimental.System.Messaging 
+            // doesn't provide async message receiving support
             while (!stoppingToken.IsCancellationRequested)
             {
                 try
                 {
-                    // Use a short timeout to allow for cancellation checking
-                    var message = _orderQueue.Receive(TimeSpan.FromSeconds(1));
+                    // Use a 5-second timeout to balance responsiveness and CPU usage
+                    var message = _orderQueue.Receive(TimeSpan.FromSeconds(5));
                     
                     if (message.Body is Order order)
                     {
@@ -48,8 +50,7 @@ public class Worker : BackgroundService
                 }
                 catch (MessageQueueException ex) when (ex.MessageQueueErrorCode == MessageQueueErrorCode.IOTimeout)
                 {
-                    // Timeout is expected, continue to next iteration
-                    await Task.Delay(100, stoppingToken);
+                    // Timeout is expected when no messages are available, continue to next iteration
                 }
                 catch (Exception ex)
                 {

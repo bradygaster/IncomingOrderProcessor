@@ -6,9 +6,9 @@ namespace IncomingOrderProcessor.WorkerService
     [Serializable]
     public class Order
     {
-        public string OrderId { get; set; }
+        public string OrderId { get; set; } = string.Empty;
         public DateTime OrderDate { get; set; }
-        public List<OrderItem> Items { get; set; }
+        public List<OrderItem> Items { get; set; } = new List<OrderItem>();
         public decimal Subtotal { get; set; }
         public decimal Tax { get; set; }
         public decimal Shipping { get; set; }
