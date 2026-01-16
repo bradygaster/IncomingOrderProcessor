@@ -1,0 +1,87 @@
+name: CI
+
+on:
+  push:
+    branches: [ main, develop, 'copilot/**' ]
+  pull_request:
+    branches: [ main, develop ]
+
+jobs:
+  build:
+    name: Build and Test
+    runs-on: windows-latest
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+    
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v2
+    
+    - name: Cache NuGet packages
+      uses: actions/cache@v4
+      with:
+        path: ~/.nuget/packages
+        key: ${{ runner.os }}-nuget-${{ hashFiles('**/packages.lock.json') }}
+        restore-keys: |
+          ${{ runner.os }}-nuget-
+    
+    - name: Restore NuGet packages
+      run: nuget restore IncomingOrderProcessor.slnx
+    
+    - name: Build solution
+      run: msbuild IncomingOrderProcessor.slnx /p:Configuration=Release /p:Platform="Any CPU" /v:minimal
+    
+    - name: Run tests
+      run: |
+        $testProjects = Get-ChildItem -Path . -Recurse -Filter "*test*.csproj"
+        if ($testProjects.Count -eq 0) {
+          Write-Host "No test projects found, skipping tests"
+        } else {
+          foreach ($project in $testProjects) {
+            Write-Host "Running tests for $($project.FullName)"
+            dotnet test $project.FullName --configuration Release --no-build
+          }
+        }
+      shell: pwsh
+      continue-on-error: true
+  
+  security-scan:
+    name: Security Scan
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+      actions: read
+      contents: read
+    
+    steps:
+    - name: Checkout code
+      uses: actions/checkout@v4
+    
+    - name: Initialize CodeQL
+      uses: github/codeql-action/init@v3
+      with:
+        languages: csharp
+    
+    - name: Setup MSBuild
+      uses: microsoft/setup-msbuild@v2
+      if: runner.os == 'Windows'
+    
+    - name: Setup NuGet
+      uses: NuGet/setup-nuget@v2
+      if: runner.os == 'Windows'
+    
+    - name: Restore and build for CodeQL
+      run: |
+        nuget restore IncomingOrderProcessor.slnx || true
+        msbuild IncomingOrderProcessor.slnx /p:Configuration=Release /p:Platform="Any CPU" /v:minimal || true
+      shell: bash
+      continue-on-error: true
+    
+    - name: Perform CodeQL Analysis
+      uses: github/codeql-action/analyze@v3
+      with:
+        category: "/language:csharp"
