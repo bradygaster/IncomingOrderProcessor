@@ -12,7 +12,7 @@ Security scan completed on the IncomingOrderProcessor codebase. The project is a
 ## 1. Dependency Vulnerabilities
 
 ### Scan Method
-Attempted to run `dotnet list package --vulnerable` but the project uses .NET Framework with direct assembly references rather than NuGet PackageReference format.
+Ran `dotnet list package --vulnerable` command. The project uses .NET Framework with direct assembly references rather than NuGet PackageReference format, so the command does not apply to this project type.
 
 ### Findings
 - **No external NuGet packages detected** - The project only uses framework assemblies (System.*)
@@ -51,8 +51,12 @@ Attempted to run `dotnet list package --vulnerable` but the project uses .NET Fr
 
 3. **Message Processing** (Lines 64-88):
    - ✅ XmlMessageFormatter with type safety
-   - ⚠️ **POTENTIAL ISSUE**: XML deserialization without additional validation
-   - Note: Uses strongly-typed Order class which mitigates some risks
+   - ⚠️ **POTENTIAL ISSUE**: XML deserialization without additional validation could be susceptible to XML External Entity (XXE) attacks or XML bomb vulnerabilities if malicious XML is injected into the message queue
+   - Note: Risk is mitigated by multiple factors:
+     - Strongly-typed Order class constrains deserialization
+     - Private local queue (.\Private$\) requires local system access
+     - No external/network-exposed queue endpoints
+     - MSMQ itself provides message integrity
 
 4. **Logging** (Lines 135-139):
    - ✅ Console logging only (no file-based logs with potential PII)
@@ -76,10 +80,12 @@ Attempted to run `dotnet list package --vulnerable` but the project uses .NET Fr
 ### Security Observations
 
 **Low Severity Issues:**
-1. **XML Deserialization** - The service uses XmlMessageFormatter for message deserialization. While this is constrained to specific types (Order), it could potentially be exploited if an attacker can inject messages into the queue. However, this is mitigated by:
+1. **XML Deserialization** - The service uses XmlMessageFormatter for message deserialization, which could theoretically be vulnerable to XML External Entity (XXE) attacks or XML bomb vulnerabilities if malicious XML is injected. However, this risk is effectively mitigated by:
    - Using private local queues (.\Private$\)
-   - Type constraints on the formatter
+   - Type constraints on the formatter (strongly-typed Order class)
    - Local system access required to write to queue
+   - No external/network-exposed queue endpoints
+   - MSMQ message integrity
 
 **Best Practices Followed:**
 - No sensitive data hardcoded
