@@ -1,32 +1,50 @@
 ﻿using System;
+using System.IO;
 using System.Messaging;
 using System.ServiceProcess;
 using System.Text;
+using Microsoft.Extensions.Configuration;
 
 namespace IncomingOrderProcessor
 {
     public partial class Service1 : ServiceBase
     {
         private MessageQueue orderQueue;
-        private const string QueuePath = @".\Private$\productcatalogorders";
+        private string queuePath;
+        private IConfiguration configuration;
 
         public Service1()
         {
             InitializeComponent();
+            LoadConfiguration();
+        }
+
+        private void LoadConfiguration()
+        {
+            var environment = Environment.GetEnvironmentVariable("DOTNET_ENVIRONMENT") ?? "Production";
+            
+            var builder = new ConfigurationBuilder()
+                .SetBasePath(AppDomain.CurrentDomain.BaseDirectory)
+                .AddJsonFile("appsettings.json", optional: false, reloadOnChange: true)
+                .AddJsonFile($"appsettings.{environment}.json", optional: true, reloadOnChange: true)
+                .AddEnvironmentVariables();
+
+            configuration = builder.Build();
+            queuePath = configuration["MessageQueue:QueuePath"] ?? @".\Private$\productcatalogorders";
         }
 
         protected override void OnStart(string[] args)
         {
             try
             {
-                if (!MessageQueue.Exists(QueuePath))
+                if (!MessageQueue.Exists(queuePath))
                 {
-                    orderQueue = MessageQueue.Create(QueuePath);
-                    LogMessage("Created new queue: " + QueuePath);
+                    orderQueue = MessageQueue.Create(queuePath);
+                    LogMessage("Created new queue: " + queuePath);
                 }
                 else
                 {
-                    orderQueue = new MessageQueue(QueuePath);
+                    orderQueue = new MessageQueue(queuePath);
                 }
 
                 orderQueue.Formatter = new XmlMessageFormatter(new Type[] { typeof(Order) });
@@ -34,7 +52,7 @@ namespace IncomingOrderProcessor
                 orderQueue.ReceiveCompleted += new ReceiveCompletedEventHandler(OnOrderReceived);
                 orderQueue.BeginReceive();
 
-                LogMessage("Order processing service started successfully. Watching queue: " + QueuePath);
+                LogMessage("Order processing service started successfully. Watching queue: " + queuePath);
             }
             catch (Exception ex)
             {
