@@ -112,7 +112,9 @@
         "**/global.json"
       ],
       "files_to_create": [],
-      "depends_on": [],
+      "depends_on": [
+        "transform-002-migrate_msmq_to_servicebus"
+      ],
       "blocks": [],
       "estimated_minutes": 45,
       "agent_hint": "Good for coding agents - systematic file updates",
@@ -181,9 +183,7 @@
         "infrastructure/service-bus.bicep"
       ],
       "depends_on": [],
-      "blocks": [
-        "transform-001-upgrade_dotnet"
-      ],
+      "blocks": [],
       "estimated_minutes": 90,
       "agent_hint": "Add Service Bus SDK, replace MessageQueue with ServiceBusClient",
       "template_id": "migrate-msmq-to-servicebus",
