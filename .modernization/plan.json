@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "generated_at": "2026-01-16T14:05:21.439340",
+  "generated_at": "2026-01-16T16:15:32.015305",
   "repository": "repo",
   "complexity_score": 5,
   "total_tasks": 11,
@@ -61,7 +61,7 @@
       "agent_hint": "Automated analysis - run detection tools",
       "template_id": "assess-repository",
       "started_at": null,
-      "completed_at": "2026-01-16T14:05:21.439268",
+      "completed_at": "2026-01-16T16:15:31.990796",
       "result": null,
       "branch": null,
       "pr_url": null
@@ -112,7 +112,9 @@
         "**/global.json"
       ],
       "files_to_create": [],
-      "depends_on": [],
+      "depends_on": [
+        "transform-002-migrate_msmq_to_servicebus"
+      ],
       "blocks": [],
       "estimated_minutes": 45,
       "agent_hint": "Good for coding agents - systematic file updates",
@@ -181,7 +183,9 @@
         "infrastructure/service-bus.bicep"
       ],
       "depends_on": [],
-      "blocks": [],
+      "blocks": [
+        "transform-001-upgrade_dotnet"
+      ],
       "estimated_minutes": 90,
       "agent_hint": "Add Service Bus SDK, replace MessageQueue with ServiceBusClient",
       "template_id": "migrate-msmq-to-servicebus",
