@@ -1,6 +1,6 @@
 {
   "version": "1.0",
-  "generated_at": "2026-01-16T18:21:01.733155",
+  "generated_at": "2026-01-16T21:38:59.281609",
   "repository": "repo",
   "complexity_score": 5,
   "total_tasks": 11,
@@ -12,8 +12,8 @@
     "deploy"
   ],
   "detected_patterns": [
-    "msmq",
-    "windows_service"
+    "windows_service",
+    "msmq"
   ],
   "tasks": [
     {
@@ -61,7 +61,7 @@
       "agent_hint": "Automated analysis - run detection tools",
       "template_id": "assess-repository",
       "started_at": null,
-      "completed_at": "2026-01-16T18:21:01.703267",
+      "completed_at": "2026-01-16T21:38:59.260218",
       "result": null,
       "branch": null,
       "pr_url": null
