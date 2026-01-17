@@ -28,7 +28,7 @@ preferences:
       target: azure-service-bus
       connectionStringSecret: ServiceBusConnectionString
       queueMapping:
-        - source: ".\Private$\productcatalogorders"
+        - source: ".\\Private$\\productcatalogorders"
           target: "product-catalog-orders"
           sessionEnabled: false
           
