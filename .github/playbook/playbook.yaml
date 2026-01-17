@@ -1,0 +1,84 @@
+# Modernization Playbook for IncomingOrderProcessor
+# Generated based on user preferences and Microsoft-recommended defaults
+
+migration:
+  # Target framework for the application
+  targetFramework: net10.0
+  
+  # Target compute platform
+  targetPlatform: Azure Container Apps
+  
+  # Technology migration mappings
+  mappings:
+    # Windows Service → Worker Service pattern
+    - from: Windows Service
+      to: Worker Service
+      description: Convert ServiceBase to BackgroundService/IHostedService
+    
+    # MSMQ → Azure Service Bus
+    - from: MSMQ (System.Messaging)
+      to: Azure Service Bus
+      description: Replace MessageQueue with Azure.Messaging.ServiceBus
+    
+    # Old csproj → SDK-style csproj
+    - from: Legacy csproj format
+      to: SDK-style csproj
+      description: Modernize project file to use SDK-style format
+  
+  # Additional preferences
+  preferences:
+    # Use modern .NET hosting model
+    useGenericHost: true
+    
+    # Enable containerization
+    containerSupport: true
+    
+    # Use dependency injection
+    useDependencyInjection: true
+    
+    # Configuration management
+    useModernConfiguration: true
+    
+    # Logging
+    useModernLogging: true
+    
+    # Health checks for Container Apps
+    enableHealthChecks: true
+
+# Azure Service Bus configuration guidance
+azureServiceBus:
+  # Connection configuration (to be set via app configuration)
+  connectionStringConfig: AzureServiceBus:ConnectionString
+  
+  # Queue configuration
+  queueName: productcatalogorders
+  
+  # Processing options
+  processingOptions:
+    maxConcurrentCalls: 1
+    autoCompleteMessages: false
+    prefetchCount: 0
+
+# Container Apps deployment
+containerApps:
+  # Container image configuration
+  containerImage:
+    registry: <your-registry>.azurecr.io
+    repository: incomingorderprocessor
+    tag: latest
+  
+  # Resource requirements
+  resources:
+    cpu: 0.5
+    memory: 1.0Gi
+  
+  # Scaling rules
+  scaling:
+    minReplicas: 1
+    maxReplicas: 10
+    rules:
+      - name: azure-servicebus-queue-length
+        type: azure-servicebus
+        metadata:
+          queueName: productcatalogorders
+          messageCount: "5"
