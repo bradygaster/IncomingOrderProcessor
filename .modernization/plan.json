@@ -112,9 +112,7 @@
         "**/global.json"
       ],
       "files_to_create": [],
-      "depends_on": [
-        "transform-002-migrate_msmq_to_servicebus"
-      ],
+      "depends_on": [],
       "blocks": [],
       "estimated_minutes": 45,
       "agent_hint": "Good for coding agents - systematic file updates",
