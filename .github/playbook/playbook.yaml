@@ -1,0 +1,78 @@
+name: IncomingOrderProcessor Modernization
+description: Modernize .NET Framework 4.8.1 Windows Service to .NET 10 Worker Service for Azure Container Apps
+
+preferences:
+  # Target runtime and framework
+  targetFramework: net10.0
+  targetRuntime: linux-x64
+  
+  # Azure compute target
+  compute:
+    platform: azure-container-apps
+    containerRegistry: acr
+    enableHttpIngress: false
+    minReplicas: 1
+    maxReplicas: 3
+  
+  # Migration mappings
+  migrations:
+    # Windows Service to Worker Service
+    windowsService:
+      enabled: true
+      targetPattern: worker-service
+      useHostedService: true
+      
+    # MSMQ to Azure Service Bus
+    messaging:
+      source: msmq
+      target: azure-service-bus
+      connectionStringSecret: ServiceBusConnectionString
+      queueMapping:
+        - source: ".\Private$\productcatalogorders"
+          target: "product-catalog-orders"
+          sessionEnabled: false
+          
+    # Project structure
+    project:
+      format: sdk-style
+      enableNullableReferenceTypes: true
+      useImplicitUsings: true
+      targetType: worker
+      
+  # Dependencies
+  dependencies:
+    add:
+      - name: Microsoft.Extensions.Hosting
+        version: 9.0.0
+      - name: Azure.Messaging.ServiceBus
+        version: 7.18.2
+      - name: Microsoft.Extensions.Azure
+        version: 1.7.6
+      - name: Microsoft.Extensions.Configuration
+        version: 9.0.0
+      - name: Microsoft.Extensions.Configuration.EnvironmentVariables
+        version: 9.0.0
+      - name: Microsoft.Extensions.Configuration.Json
+        version: 9.0.0
+    remove:
+      - System.Messaging
+      - System.ServiceProcess
+      - System.Configuration.Install
+      
+  # Containerization
+  container:
+    baseImage: mcr.microsoft.com/dotnet/runtime:10.0
+    port: 8080
+    healthCheck:
+      enabled: false
+    secrets:
+      - ServiceBusConnectionString
+      
+  # Azure resources required
+  azureResources:
+    - type: service-bus-namespace
+      sku: Standard
+      queues:
+        - name: product-catalog-orders
+          maxDeliveryCount: 10
+          lockDuration: PT5M

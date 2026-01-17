@@ -1,0 +1,335 @@
+{
+  "assessmentVersion": "1.0",
+  "assessmentDate": "2026-01-17T00:45:07.803Z",
+  "repository": {
+    "name": "IncomingOrderProcessor",
+    "owner": "bradygaster",
+    "branch": "modernize/assess"
+  },
+  "currentState": {
+    "framework": {
+      "name": ".NET Framework",
+      "version": "4.8.1",
+      "isLegacy": true
+    },
+    "projectType": "Windows Service",
+    "projectFormat": "Legacy MSBuild",
+    "targetOS": "Windows",
+    "deployment": "On-premises Windows Server"
+  },
+  "targetState": {
+    "framework": {
+      "name": ".NET",
+      "version": "10.0",
+      "isModern": true
+    },
+    "projectType": "Worker Service",
+    "projectFormat": "SDK-style",
+    "targetOS": "Linux",
+    "deployment": "Azure Container Apps"
+  },
+  "legacyPatterns": [
+    {
+      "category": "Framework",
+      "pattern": ".NET Framework 4.8.1",
+      "severity": "high",
+      "files": [
+        "IncomingOrderProcessor/IncomingOrderProcessor.csproj",
+        "IncomingOrderProcessor/App.config"
+      ],
+      "description": "Application targets .NET Framework 4.8.1 which is Windows-only and not suitable for container deployment",
+      "migrationPath": "Upgrade to .NET 10 with SDK-style project format",
+      "effort": "medium",
+      "breaking": true
+    },
+    {
+      "category": "Service Architecture",
+      "pattern": "Windows Service (ServiceBase)",
+      "severity": "high",
+      "files": [
+        "IncomingOrderProcessor/Service1.cs",
+        "IncomingOrderProcessor/Service1.Designer.cs",
+        "IncomingOrderProcessor/Program.cs",
+        "IncomingOrderProcessor/ProjectInstaller.cs",
+        "IncomingOrderProcessor/ProjectInstaller.Designer.cs"
+      ],
+      "description": "Application uses Windows Service (ServiceBase) which is Windows-specific and not suitable for containers",
+      "migrationPath": "Migrate to .NET Worker Service with IHostedService",
+      "effort": "medium",
+      "breaking": true
+    },
+    {
+      "category": "Messaging",
+      "pattern": "MSMQ (Microsoft Message Queuing)",
+      "severity": "critical",
+      "files": [
+        "IncomingOrderProcessor/Service1.cs"
+      ],
+      "dependencies": [
+        "System.Messaging"
+      ],
+      "description": "Application uses MSMQ (System.Messaging) which is Windows-only and not available in Azure Container Apps",
+      "migrationPath": "Migrate to Azure Service Bus with Azure.Messaging.ServiceBus SDK",
+      "effort": "high",
+      "breaking": true,
+      "details": {
+        "queuesUsed": [
+          ".\\Private$\\productcatalogorders"
+        ],
+        "operations": [
+          "MessageQueue.Create",
+          "MessageQueue.Exists",
+          "BeginReceive/EndReceive",
+          "XmlMessageFormatter"
+        ]
+      }
+    },
+    {
+      "category": "Project Structure",
+      "pattern": "Legacy MSBuild project format",
+      "severity": "medium",
+      "files": [
+        "IncomingOrderProcessor/IncomingOrderProcessor.csproj"
+      ],
+      "description": "Project uses legacy MSBuild format instead of modern SDK-style format",
+      "migrationPath": "Convert to SDK-style csproj",
+      "effort": "low",
+      "breaking": false
+    },
+    {
+      "category": "Serialization",
+      "pattern": "XmlMessageFormatter with Serializable attribute",
+      "severity": "low",
+      "files": [
+        "IncomingOrderProcessor/Service1.cs",
+        "IncomingOrderProcessor/Order.cs"
+      ],
+      "description": "Uses legacy XML serialization with [Serializable] attribute",
+      "migrationPath": "Consider using System.Text.Json for Azure Service Bus message serialization",
+      "effort": "low",
+      "breaking": false
+    },
+    {
+      "category": "Configuration",
+      "pattern": "App.config",
+      "severity": "low",
+      "files": [
+        "IncomingOrderProcessor/App.config"
+      ],
+      "description": "Uses App.config for configuration instead of modern appsettings.json",
+      "migrationPath": "Migrate to appsettings.json with Microsoft.Extensions.Configuration",
+      "effort": "low",
+      "breaking": false
+    }
+  ],
+  "dependencies": {
+    "current": [
+      {
+        "name": "System.Messaging",
+        "type": "Framework",
+        "windowsOnly": true,
+        "action": "remove"
+      },
+      {
+        "name": "System.ServiceProcess",
+        "type": "Framework",
+        "windowsOnly": true,
+        "action": "remove"
+      },
+      {
+        "name": "System.Configuration.Install",
+        "type": "Framework",
+        "windowsOnly": true,
+        "action": "remove"
+      }
+    ],
+    "required": [
+      {
+        "name": "Microsoft.Extensions.Hosting",
+        "version": "9.0.0",
+        "purpose": "Worker Service hosting infrastructure"
+      },
+      {
+        "name": "Azure.Messaging.ServiceBus",
+        "version": "7.18.2",
+        "purpose": "Azure Service Bus client for message processing"
+      },
+      {
+        "name": "Microsoft.Extensions.Azure",
+        "version": "1.7.6",
+        "purpose": "Azure SDK integration with dependency injection"
+      },
+      {
+        "name": "Microsoft.Extensions.Configuration",
+        "version": "9.0.0",
+        "purpose": "Configuration management"
+      },
+      {
+        "name": "Microsoft.Extensions.Configuration.EnvironmentVariables",
+        "version": "9.0.0",
+        "purpose": "Environment variable configuration provider"
+      },
+      {
+        "name": "Microsoft.Extensions.Configuration.Json",
+        "version": "9.0.0",
+        "purpose": "JSON configuration file support"
+      }
+    ]
+  },
+  "codeMetrics": {
+    "totalFiles": 9,
+    "codeFiles": 5,
+    "configFiles": 1,
+    "designerFiles": 2,
+    "resourceFiles": 1,
+    "linesOfCode": 142,
+    "complexityScore": "low"
+  },
+  "migrationTasks": [
+    {
+      "id": "1",
+      "title": "Convert project to SDK-style format",
+      "priority": "high",
+      "effort": "low",
+      "tasks": [
+        "Create new SDK-style .csproj targeting net10.0",
+        "Remove legacy project files (ProjectInstaller, Service1.Designer)",
+        "Update namespace declarations"
+      ]
+    },
+    {
+      "id": "2",
+      "title": "Migrate Windows Service to Worker Service",
+      "priority": "high",
+      "effort": "medium",
+      "tasks": [
+        "Replace ServiceBase with BackgroundService/IHostedService",
+        "Update Program.cs to use Host.CreateDefaultBuilder",
+        "Remove Windows Service installer code",
+        "Implement graceful shutdown handling"
+      ]
+    },
+    {
+      "id": "3",
+      "title": "Migrate MSMQ to Azure Service Bus",
+      "priority": "critical",
+      "effort": "high",
+      "tasks": [
+        "Replace System.Messaging with Azure.Messaging.ServiceBus",
+        "Update queue path to Azure Service Bus queue name",
+        "Implement ServiceBusProcessor for message receiving",
+        "Update message serialization from XML to JSON",
+        "Add connection string configuration",
+        "Implement error handling and retry logic",
+        "Handle poison messages with dead-letter queue"
+      ]
+    },
+    {
+      "id": "4",
+      "title": "Modernize configuration",
+      "priority": "medium",
+      "effort": "low",
+      "tasks": [
+        "Remove App.config",
+        "Add appsettings.json with ServiceBus configuration",
+        "Add support for environment variables",
+        "Configure logging"
+      ]
+    },
+    {
+      "id": "5",
+      "title": "Add containerization support",
+      "priority": "high",
+      "effort": "low",
+      "tasks": [
+        "Create Dockerfile for .NET 10",
+        "Configure container health checks",
+        "Add .dockerignore file",
+        "Document container environment variables"
+      ]
+    },
+    {
+      "id": "6",
+      "title": "Add Azure Container Apps deployment",
+      "priority": "high",
+      "effort": "medium",
+      "tasks": [
+        "Create Azure Container Apps YAML manifest",
+        "Configure Service Bus connection via secrets",
+        "Set up scaling rules",
+        "Configure managed identity (optional)",
+        "Add deployment documentation"
+      ]
+    },
+    {
+      "id": "7",
+      "title": "Update data models",
+      "priority": "low",
+      "effort": "low",
+      "tasks": [
+        "Remove [Serializable] attributes",
+        "Ensure JSON serialization compatibility",
+        "Add data validation attributes if needed"
+      ]
+    }
+  ],
+  "risks": [
+    {
+      "category": "Breaking Changes",
+      "risk": "MSMQ to Service Bus migration changes message handling semantics",
+      "impact": "high",
+      "mitigation": "Thorough testing of message processing, implement retry logic, configure dead-letter queues"
+    },
+    {
+      "category": "Infrastructure",
+      "risk": "Azure Service Bus requires Azure subscription and incurs costs",
+      "impact": "medium",
+      "mitigation": "Document Azure resource requirements, estimate costs, consider Service Bus Standard tier"
+    },
+    {
+      "category": "Deployment",
+      "risk": "Windows Service to Container deployment requires different operational procedures",
+      "impact": "medium",
+      "mitigation": "Document new deployment process, provide infrastructure-as-code templates"
+    },
+    {
+      "category": "Message Format",
+      "risk": "XML to JSON serialization may require sender updates",
+      "impact": "high",
+      "mitigation": "Ensure sender applications are updated to send JSON or implement dual-format support"
+    }
+  ],
+  "benefits": [
+    "Cross-platform deployment (Linux containers)",
+    "Cloud-native architecture",
+    "Better scalability with Azure Container Apps",
+    "Modern .NET 10 performance improvements",
+    "Simplified deployment with containers",
+    "Better monitoring and diagnostics",
+    "Reduced infrastructure maintenance",
+    "Pay-per-use pricing model"
+  ],
+  "estimatedEffort": {
+    "total": "40-60 hours",
+    "breakdown": {
+      "projectConversion": "4-6 hours",
+      "serviceModernization": "8-12 hours",
+      "messagingMigration": "16-24 hours",
+      "containerization": "4-6 hours",
+      "azureDeployment": "4-6 hours",
+      "testing": "4-6 hours"
+    }
+  },
+  "recommendations": [
+    "Start with project structure conversion to SDK-style",
+    "Implement Worker Service pattern before messaging changes",
+    "Test MSMQ to Service Bus migration thoroughly in development",
+    "Consider implementing health checks for Container Apps",
+    "Use managed identity for Service Bus authentication when possible",
+    "Implement structured logging for better observability",
+    "Add unit tests for message processing logic",
+    "Document environment variables and configuration requirements",
+    "Create infrastructure-as-code templates (Bicep/Terraform) for Azure resources",
+    "Implement graceful shutdown to complete message processing on shutdown"
+  ]
+}
