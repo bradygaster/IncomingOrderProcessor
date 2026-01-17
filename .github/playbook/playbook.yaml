@@ -1,0 +1,48 @@
+version: 1.0
+modernization:
+  preferences:
+    # Target framework for migration
+    target_framework: net10.0
+    
+    # Target compute platform
+    target_compute: azure_container_apps
+    
+    # Technology migrations
+    migrations:
+      # Windows Service to Worker Service
+      windows_service:
+        target: worker_service
+        reason: "Worker Service is cross-platform and suitable for containers"
+      
+      # MSMQ to Azure Service Bus
+      msmq:
+        target: azure_service_bus
+        reason: "Azure Service Bus is cloud-native and supports container deployments"
+      
+      # Configuration migration
+      configuration:
+        from: app_config
+        to: appsettings_json
+        reason: "appsettings.json is the standard for modern .NET applications"
+      
+      # Project format
+      project_format:
+        target: sdk_style
+        reason: "SDK-style projects are required for .NET 10"
+    
+    # Container configuration
+    containerization:
+      enabled: true
+      base_image: mcr.microsoft.com/dotnet/aspnet:10.0
+      expose_ports: []
+      environment_variables:
+        - DOTNET_ENVIRONMENT
+        - ServiceBusConnectionString
+    
+    # Azure Service Bus configuration
+    azure_service_bus:
+      queue_name: productcatalogorders
+      connection_string_key: ServiceBusConnectionString
+      session_enabled: false
+      dead_letter_enabled: true
+      max_delivery_count: 10
