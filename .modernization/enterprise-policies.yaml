@@ -1,0 +1,39 @@
+# Enterprise Policies
+#
+# This file contains YOUR organization's policy overrides.
+# Microsoft defaults are loaded automatically from the tool's config.
+#
+# Uncomment and customize sections below to override defaults.
+#
+# Common overrides:
+# - Allowed Azure regions
+# - Security requirements (managed identity, private endpoints)
+# - Naming conventions
+# - Compliance tags
+#
+# Documentation: https://aka.ms/appmodagent/enterprise-policies
+#
+# Generated: 2026-01-18 07:00:28
+
+# version: "1.0"
+# organization: "YourOrg"
+
+# Uncomment and customize below:
+# general:
+#   minimum_target_framework: "net10.0"
+#   require_nullable_reference_types: true
+
+# cloud:
+#   provider: azure
+#   allowed_regions:
+#     - eastus2
+#     - westus2
+
+# security:
+#   authentication:
+#     require_managed_identity: true
+#     disallow_basic_auth: true
+#   networking:
+#     require_private_endpoints: true
+
+# See config/enterprise-policies.yaml in the tool for full schema
