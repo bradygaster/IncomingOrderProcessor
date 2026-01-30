@@ -10,12 +10,6 @@ public class Order
     public decimal Shipping { get; set; }
     public decimal Total { get; set; }
     public string CustomerSessionId { get; set; } = string.Empty;
-
-    public Order()
-    {
-        OrderId = Guid.NewGuid().ToString();
-        OrderDate = DateTime.Now;
-    }
 }
 
 public class OrderItem

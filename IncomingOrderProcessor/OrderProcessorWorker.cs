@@ -10,6 +10,10 @@ public class OrderProcessorWorker : BackgroundService
     private readonly IConfiguration _configuration;
     private ServiceBusProcessor? _processor;
     private ServiceBusClient? _client;
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNameCaseInsensitive = true
+    };
 
     public OrderProcessorWorker(ILogger<OrderProcessorWorker> logger, IConfiguration configuration)
     {
@@ -26,7 +30,11 @@ public class OrderProcessorWorker : BackgroundService
 
             if (string.IsNullOrEmpty(connectionString))
             {
-                _logger.LogError("ServiceBus:ConnectionString is not configured. Please set it in appsettings.json or environment variables.");
+                _logger.LogError(
+                    "ServiceBus:ConnectionString is not configured. " +
+                    "Please set it in appsettings.json or environment variables. " +
+                    "Example: ServiceBus__ConnectionString=Endpoint=sb://<namespace>.servicebus.windows.net/;SharedAccessKeyName=<key-name>;SharedAccessKey=<key>. " +
+                    "For more information, visit: https://learn.microsoft.com/azure/service-bus-messaging/service-bus-dotnet-get-started-with-queues");
                 return;
             }
 
@@ -61,19 +69,28 @@ public class OrderProcessorWorker : BackgroundService
         try
         {
             var body = args.Message.Body.ToString();
-            var order = JsonSerializer.Deserialize<Order>(body);
+            var order = JsonSerializer.Deserialize<Order>(body, JsonOptions);
 
-            if (order != null)
+            if (order == null || string.IsNullOrEmpty(order.OrderId))
             {
-                WriteOrderToConsole(order);
-                _logger.LogInformation("Order {OrderId} processed successfully and removed from queue.", order.OrderId);
+                _logger.LogWarning("Received invalid or malformed message. Message will be moved to dead-letter queue. Body: {Body}", body);
+                await args.DeadLetterMessageAsync(args.Message, "InvalidMessage", "Message is null or missing OrderId after deserialization");
+                return;
             }
+
+            WriteOrderToConsole(order);
+            _logger.LogInformation("Order {OrderId} processed successfully and removed from queue.", order.OrderId);
 
             await args.CompleteMessageAsync(args.Message);
         }
+        catch (JsonException ex)
+        {
+            _logger.LogError(ex, "Failed to deserialize message. Message will be moved to dead-letter queue.");
+            await args.DeadLetterMessageAsync(args.Message, "DeserializationError", ex.Message);
+        }
         catch (Exception ex)
         {
-            _logger.LogError(ex, "Error processing order");
+            _logger.LogError(ex, "Error processing order. Message will be abandoned for retry.");
             await args.AbandonMessageAsync(args.Message);
         }
     }

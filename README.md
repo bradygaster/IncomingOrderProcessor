@@ -113,8 +113,6 @@ az containerapp create \
   --resource-group myResourceGroup \
   --environment myEnvironment \
   --image myregistry.azurecr.io/incoming-order-processor:latest \
-  --target-port 8080 \
-  --ingress external \
   --registry-server myregistry.azurecr.io \
   --secrets service-bus-connection-string="<your-service-bus-connection-string>" \
   --env-vars ServiceBus__ConnectionString=secretref:service-bus-connection-string \
