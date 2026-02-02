@@ -1,141 +1,154 @@
-﻿using System;
-using System.Messaging;
-using System.ServiceProcess;
+﻿using Azure.Messaging.ServiceBus;
 using System.Text;
+using System.Text.Json;
 
-namespace IncomingOrderProcessor
+namespace IncomingOrderProcessor;
+
+public class OrderProcessorService : BackgroundService
 {
-    public partial class Service1 : ServiceBase
+    private ServiceBusProcessor? _processor;
+    private ServiceBusClient? _client;
+    private readonly ILogger<OrderProcessorService> _logger;
+    private readonly IConfiguration _configuration;
+    private const string DefaultQueueName = "productcatalogorders";
+
+    public OrderProcessorService(ILogger<OrderProcessorService> logger, IConfiguration configuration)
     {
-        private MessageQueue orderQueue;
-        private const string QueuePath = @".\Private$\productcatalogorders";
+        _logger = logger;
+        _configuration = configuration;
+    }
 
-        public Service1()
+    protected override async Task ExecuteAsync(CancellationToken stoppingToken)
+    {
+        try
         {
-            InitializeComponent();
+            var connectionString = _configuration["ServiceBus:ConnectionString"];
+            var queueName = _configuration["ServiceBus:QueueName"] ?? DefaultQueueName;
+
+            if (string.IsNullOrEmpty(connectionString))
+            {
+                _logger.LogError("Azure Service Bus connection string is not configured. Please set ServiceBus:ConnectionString in configuration.");
+                return;
+            }
+
+            _client = new ServiceBusClient(connectionString);
+            _processor = _client.CreateProcessor(queueName, new ServiceBusProcessorOptions());
+
+            _processor.ProcessMessageAsync += ProcessMessageAsync;
+            _processor.ProcessErrorAsync += ProcessErrorAsync;
+
+            await _processor.StartProcessingAsync(stoppingToken);
+            _logger.LogInformation("Order processing service started successfully. Watching queue: {QueueName}", queueName);
+
+            // Keep the service running
+            await Task.Delay(Timeout.Infinite, stoppingToken);
         }
-
-        protected override void OnStart(string[] args)
+        catch (OperationCanceledException)
         {
-            try
-            {
-                if (!MessageQueue.Exists(QueuePath))
-                {
-                    orderQueue = MessageQueue.Create(QueuePath);
-                    LogMessage("Created new queue: " + QueuePath);
-                }
-                else
-                {
-                    orderQueue = new MessageQueue(QueuePath);
-                }
-
-                orderQueue.Formatter = new XmlMessageFormatter(new Type[] { typeof(Order) });
-                
-                orderQueue.ReceiveCompleted += new ReceiveCompletedEventHandler(OnOrderReceived);
-                orderQueue.BeginReceive();
-
-                LogMessage("Order processing service started successfully. Watching queue: " + QueuePath);
-            }
-            catch (Exception ex)
-            {
-                LogMessage("Error starting service: " + ex.Message);
-                throw;
-            }
+            _logger.LogInformation("Order processing service is stopping.");
         }
-
-        protected override void OnStop()
+        catch (Exception ex)
         {
-            try
-            {
-                if (orderQueue != null)
-                {
-                    orderQueue.ReceiveCompleted -= OnOrderReceived;
-                    orderQueue.Close();
-                    orderQueue.Dispose();
-                }
-                LogMessage("Order processing service stopped.");
-            }
-            catch (Exception ex)
-            {
-                LogMessage("Error stopping service: " + ex.Message);
-            }
+            _logger.LogError(ex, "Error starting service: {Message}", ex.Message);
+            throw;
         }
+    }
 
-        private void OnOrderReceived(object sender, ReceiveCompletedEventArgs e)
+    private async Task ProcessMessageAsync(ProcessMessageEventArgs args)
+    {
+        try
         {
-            try
-            {
-                MessageQueue queue = (MessageQueue)sender;
-                Message message = queue.EndReceive(e.AsyncResult);
+            var messageBody = args.Message.Body.ToString();
+            var order = JsonSerializer.Deserialize<Order>(messageBody);
 
-                Order order = (Order)message.Body;
-                
+            if (order != null)
+            {
                 WriteOrderToConsole(order);
-                
-                LogMessage($"Order {order.OrderId} processed successfully and removed from queue.");
-                
-                queue.BeginReceive();
+                _logger.LogInformation("Order {OrderId} processed successfully and removed from queue.", order.OrderId);
             }
-            catch (Exception ex)
-            {
-                LogMessage("Error processing order: " + ex.Message);
-                
-                if (orderQueue != null)
-                {
-                    orderQueue.BeginReceive();
-                }
-            }
-        }
 
-        private void WriteOrderToConsole(Order order)
+            await args.CompleteMessageAsync(args.Message);
+        }
+        catch (Exception ex)
         {
-            var output = new StringBuilder();
-            output.AppendLine("╔════════════════════════════════════════════════════════════════╗");
-            output.AppendLine("║                      NEW ORDER RECEIVED                        ║");
-            output.AppendLine("╚════════════════════════════════════════════════════════════════╝");
-            output.AppendLine();
-            output.AppendLine($"  Order ID:            {order.OrderId}");
-            output.AppendLine($"  Order Date:          {order.OrderDate:yyyy-MM-dd HH:mm:ss}");
-            output.AppendLine($"  Customer Session:    {order.CustomerSessionId}");
-            output.AppendLine();
-            output.AppendLine("  ┌──────────────────────────────────────────────────────────────┐");
-            output.AppendLine("  │ ORDER ITEMS                                                  │");
-            output.AppendLine("  └──────────────────────────────────────────────────────────────┘");
-            
-            if (order.Items != null && order.Items.Count > 0)
+            _logger.LogError(ex, "Error processing order: {Message}", ex.Message);
+            // Message will be retried or moved to dead-letter queue based on Service Bus configuration
+        }
+    }
+
+    private Task ProcessErrorAsync(ProcessErrorEventArgs args)
+    {
+        _logger.LogError(args.Exception, "Error in Service Bus processor: {Message}", args.Exception.Message);
+        return Task.CompletedTask;
+    }
+
+    private void WriteOrderToConsole(Order order)
+    {
+        var output = new StringBuilder();
+        output.AppendLine("╔════════════════════════════════════════════════════════════════╗");
+        output.AppendLine("║                      NEW ORDER RECEIVED                        ║");
+        output.AppendLine("╚════════════════════════════════════════════════════════════════╝");
+        output.AppendLine();
+        output.AppendLine($"  Order ID:            {order.OrderId}");
+        output.AppendLine($"  Order Date:          {order.OrderDate:yyyy-MM-dd HH:mm:ss}");
+        output.AppendLine($"  Customer Session:    {order.CustomerSessionId}");
+        output.AppendLine();
+        output.AppendLine("  ┌──────────────────────────────────────────────────────────────┐");
+        output.AppendLine("  │ ORDER ITEMS                                                  │");
+        output.AppendLine("  └──────────────────────────────────────────────────────────────┘");
+        
+        if (order.Items != null && order.Items.Count > 0)
+        {
+            foreach (var item in order.Items)
             {
-                foreach (var item in order.Items)
-                {
-                    output.AppendLine($"    • {item.ProductName}");
-                    output.AppendLine($"      SKU: {item.SKU} | Product ID: {item.ProductId}");
-                    output.AppendLine($"      Quantity: {item.Quantity} × ${item.Price:F2} = ${item.Subtotal:F2}");
-                    output.AppendLine();
-                }
-            }
-            else
-            {
-                output.AppendLine("    (No items)");
+                output.AppendLine($"    • {item.ProductName}");
+                output.AppendLine($"      SKU: {item.SKU} | Product ID: {item.ProductId}");
+                output.AppendLine($"      Quantity: {item.Quantity} × ${item.Price:F2} = ${item.Subtotal:F2}");
                 output.AppendLine();
             }
-            
-            output.AppendLine("  ┌──────────────────────────────────────────────────────────────┐");
-            output.AppendLine("  │ ORDER SUMMARY                                                │");
-            output.AppendLine("  └──────────────────────────────────────────────────────────────┘");
-            output.AppendLine($"    Subtotal:          ${order.Subtotal:F2}");
-            output.AppendLine($"    Tax:               ${order.Tax:F2}");
-            output.AppendLine($"    Shipping:          ${order.Shipping:F2}");
-            output.AppendLine($"    ───────────────────────────────────");
-            output.AppendLine($"    TOTAL:             ${order.Total:F2}");
+        }
+        else
+        {
+            output.AppendLine("    (No items)");
             output.AppendLine();
-            output.AppendLine("════════════════════════════════════════════════════════════════");
-            
-            Console.WriteLine(output.ToString());
+        }
+        
+        output.AppendLine("  ┌──────────────────────────────────────────────────────────────┐");
+        output.AppendLine("  │ ORDER SUMMARY                                                │");
+        output.AppendLine("  └──────────────────────────────────────────────────────────────┘");
+        output.AppendLine($"    Subtotal:          ${order.Subtotal:F2}");
+        output.AppendLine($"    Tax:               ${order.Tax:F2}");
+        output.AppendLine($"    Shipping:          ${order.Shipping:F2}");
+        output.AppendLine($"    ───────────────────────────────────");
+        output.AppendLine($"    TOTAL:             ${order.Total:F2}");
+        output.AppendLine();
+        output.AppendLine("════════════════════════════════════════════════════════════════");
+        
+        Console.WriteLine(output.ToString());
+    }
+
+    public override async Task StopAsync(CancellationToken stoppingToken)
+    {
+        try
+        {
+            if (_processor != null)
+            {
+                await _processor.StopProcessingAsync(stoppingToken);
+                await _processor.DisposeAsync();
+            }
+
+            if (_client != null)
+            {
+                await _client.DisposeAsync();
+            }
+
+            _logger.LogInformation("Order processing service stopped.");
+        }
+        catch (Exception ex)
+        {
+            _logger.LogError(ex, "Error stopping service: {Message}", ex.Message);
         }
 
-        private void LogMessage(string message)
-        {
-            string logMessage = $"[{DateTime.Now:yyyy-MM-dd HH:mm:ss}] {message}";
-            Console.WriteLine(logMessage);
-        }
+        await base.StopAsync(stoppingToken);
     }
 }
