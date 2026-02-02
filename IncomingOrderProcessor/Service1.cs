@@ -59,7 +59,19 @@ public class OrderProcessorService : BackgroundService
         try
         {
             var messageBody = args.Message.Body.ToString();
-            var order = JsonSerializer.Deserialize<Order>(messageBody);
+            Order? order = null;
+
+            try
+            {
+                order = JsonSerializer.Deserialize<Order>(messageBody);
+            }
+            catch (JsonException jsonEx)
+            {
+                _logger.LogError(jsonEx, "Failed to deserialize message as Order. Message body: {MessageBody}", messageBody);
+                // Dead-letter the message as it cannot be processed
+                await args.DeadLetterMessageAsync(args.Message, "DeserializationError", "Message body is not valid Order JSON");
+                return;
+            }
 
             if (order != null)
             {
