@@ -45,11 +45,8 @@ public class OrderProcessorWorker : BackgroundService
             
             _logger.LogInformation("Order processing service started successfully. Watching queue: {QueueName}", _queueName);
 
-            // Keep the service running
-            while (!stoppingToken.IsCancellationRequested)
-            {
-                await Task.Delay(TimeSpan.FromSeconds(1), stoppingToken);
-            }
+            // Wait indefinitely until cancellation is requested
+            await Task.Delay(Timeout.Infinite, stoppingToken);
         }
         catch (Exception ex)
         {
